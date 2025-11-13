@@ -1,0 +1,713 @@
+#!/bin/bash
+
+#  This file is part of P4
+# 
+#  Copyright (C) 1996-2017  J.C. Artés, P. De Maesschalck, F. Dumortier,
+#                           C. Herssens, J. Llibre, O. Saleta, J. Torregrosa
+# 
+#  P4 is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+# 
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+clear
+
+# Color codes
+bold=$(tput bold)
+normal=$(tput sgr0)
+green=$(tput setaf 2)
+red=$(tput setaf 1)
+cyan=$(tput setaf 6)
+magenta=$(tput setaf 5)
+
+# Check OS
+platform='unknown'
+unamestr=`uname`
+if [[ "$unamestr" == 'Linux' ]]; then
+    platform='linux'
+elif [[ "$unamestr" == 'Darwin' ]]; then
+    platform='darwin'
+else
+    echo "- This script only works in Linux and macOS systems, aborting."
+    exit 1
+fi
+
+# Check qmake command
+if [[ -z ${QMAKE+x} ]]; then
+    QMAKE='qmake'
+fi
+
+
+# Functions
+function print_title {
+    if [[ "$1" == 'install' ]]; then
+        echo "${bold}${cyan}"
+        echo "    ______    ___     _              _           _  _"
+        echo "    | ___ \  /   |   (_)            | |         | || |"
+        echo "    | |_/ / / /| |    _  _ __   ___ | |_   __ _ | || |  ___  _ __"
+        echo "    |  __/ / /_| |   | || '_ \ / __|| __| / _\` || || | / _ \| '__|"
+        echo "    | |    \___  |   | || | | |\__ \| |_ | (_| || || ||  __/| |"
+        echo "    \_|        |_/   |_||_| |_||___/ \__| \__,_||_||_| \___||_|"
+        echo "${normal}"
+    elif [[ "$1" == 'uninstall' ]]; then
+        echo "${bold}${cyan}"
+        echo "    ______    ___                   _              _           _  _"
+        echo "    | ___ \  /   |                 (_)            | |         | || |"
+        echo "    | |_/ / / /| |    _   _  _ __   _  _ __   ___ | |_   __ _ | || |  ___  _ __"
+        echo "    |  __/ / /_| |   | | | || '_ \ | || '_ \ / __|| __| / _\` || || | / _ \| '__|"
+        echo "    | |    \___  |   | |_| || | | || || | | |\__ \| |_ | (_| || || ||  __/| |"
+        echo "    \_|        |_/    \__,_||_| |_||_||_| |_||___/ \__| \__,_||_||_| \___||_|"
+        echo "${normal}"
+    fi
+}
+
+function read_variable {
+    if [[ "$1" == 'yes' ]]; then
+        printf -- "$2 [Y/n] "
+    elif [[ "$1" == 'no' ]]; then
+        printf -- "$2 [y/N] "
+    elif [[ "$1" == 'yesno' ]]; then
+        printf -- "$2 [y/n] "
+    fi
+    while read -t 0 notused; do
+        read input
+    done
+    read input_variable
+}
+
+function install_home {
+    echo ""
+    echo "${bold}${cyan}===${normal}${bold} Installing P4 in ${HOME}/p4...${normal}"
+    mv p4 ${HOME}/
+    installdir=${HOME}/p4
+    ln -s ${installdir}/sumtables ${installdir}/sum_tables
+    echo "- Compilation and installation is finished."
+    echo "${bold}${magenta}"
+    echo "[IMPORTANT]${normal} Add the following lines to the configuration"
+    echo "file of your preferred shell (probably ${HOME}/.${SHELL:5}rc):"
+    echo "    ${bold}${cyan}export P4_DIR=\"${installdir}\""
+    echo "    export PATH=\"${installdir}/bin:\$PATH\"${normal}"
+    echo ""
+    echo "- In case you don't know which shell you're using, open a terminal and"
+    echo "  execute this command:"
+    echo "    echo .\$(echo \$0)rc"
+    echo "  And edit that file."
+}
+
+function install_root {
+    echo ""
+    echo "${bold}${cyan}===${normal}${bold} Installing P4 in /usr/local/p4...${normal}"
+    sudo mv p4 /usr/local
+    installdir=/usr/local/p4
+    sudo ln -s ${installdir}/sumtables ${installdir}/sum_tables
+    sudo ln -s ${installdir}/bin/p4 /usr/local/bin/p4
+    echo "- Compilation and installation is finished."
+    echo "${bold}${magenta}"
+    echo "[IMPORTANT]${normal} Add the following lines to the configuration"
+    echo "file of your preferred shell (probably ${HOME}/.${SHELL:5}rc):"
+    echo "    ${bold}${cyan}export P4_DIR=\"${installdir}\"${normal}"
+    echo ""
+    echo "- In case you don't know which shell you're using, open a terminal and"
+    echo "  execute this command:"
+    echo "    echo .\$(echo \$0)rc"
+    echo "  And edit that file."
+}
+
+function mpfr_test {
+    if [[ "$1" != 'retry' ]]; then
+        echo "- Looking for multiprecision library..."
+    fi
+    echo "#include <mpfr.h>" > testmpfr.cpp
+    echo "int main(void) {" >> testmpfr.cpp
+    echo "    return 0;"    >> testmpfr.cpp
+    echo "}"                >> testmpfr.cpp
+    if [[ "${platform}" == 'linux' ]]; then
+        if (! g++ testmpfr.cpp 1>/dev/null 2>&1); then
+            error_mpfr
+            rm testmpfr.cpp
+            exit 1
+        fi
+    elif [[ "${platform}" == 'darwin' ]]; then
+        if (! clang testmpfr.cpp 1>/dev/null 2>&1); then
+            if (! g++ testmpfr.cpp 1>/dev/null 2>&1); then
+                error_mpfr
+                rm testmpfr.cpp
+                if [[ "$1" == 'retry' ]]; then
+                    exit 1
+                else
+                    install_mpfr
+                    mpfr_test 'retry'
+                    return
+                fi
+            fi
+        fi
+    fi
+    echo "${green}[Success]${normal}"
+    rm testmpfr.cpp
+    rm a.out
+}
+
+if [[ "${platform}" == 'darwin' ]]; then
+    function install_brew {
+        if (! command -v brew >/dev/null 2>&1); then
+            sh macOS-install-tools/homebrew.sh
+        fi
+    }
+
+    function install_qt {
+        echo ""
+        echo "    - This script can automatically install Qt in your system using"
+        echo "      Homebrew."
+        read_variable 'yes' '      Do you want to proceed?'
+        if (echo "${input_variable}" | grep -iq "^n"); then
+            echo "    - Not installing Qt, exiting installer."
+            exit 1
+        else
+            install_brew
+            sh macOS-install-tools/qt.sh
+        fi
+    }
+
+    function install_mpfr {
+        echo ""
+        echo "    - This script can automatically install the MPFR library using"
+        echo "      Homebrew."
+        read_variable 'yes' 'Do you want to proceed?'
+        if (echo "${input_variable}" | grep -iq "^n"); then
+            echo "    - Not installing MPFR, exiting installer."
+            exit 1
+        else
+            install_brew
+            sh macOS-install-tools/mpfr.sh
+        fi
+    }
+fi
+
+# Error messages
+
+function error_maple {
+    echo "${bold}${red}[Error]${normal} The Maple command line 'maple' was not found in the system path."
+    echo "It is needed by P4 to perform many computations, so P4 will not really"
+    echo "work without it."
+    echo ""
+    echo "To add Maple to the system path, modify ${HOME}/.${SHELL:5}rc adding something like:"
+    if [[ ${platform} == 'linux' ]]; then
+        echo "    export PATH='/path/to/your/Maple/installation/':\$PATH"
+        echo "Where you need to put the actual path where your Maple installation can be found."
+    elif [[ ${platform} == 'darwin' ]]; then
+        echo "    export PATH='/Applications/your maple version/':\$PATH"
+        echo "Where you need to substitute 'your maple version' by the actual name of the directory"
+        echo "of the Maple installation."
+    fi
+    echo ""
+}
+
+function error_p4m {
+    echo "${bold}${red}[Error]${normal} Could not find the precompiled Maple scripts, and the maple command"
+    echo "cannot be run because Maple is either not installed or not found in the path."
+    echo "This means we cannot recompile the Maple scripts, so the installation will now abort."
+    echo ""
+    echo "- If you downloaded this repository using git, refresh it running the following in a"
+    echo "  terminal:"
+    echo "    git stash; git checkout master; git pull"
+    echo ""
+    if [[ "${platform}" == 'linux' ]]; then
+        echo "- If you downloaded the .tar.gz archive, go to https://github.com/oscarsaleta/P4/releases/latest"
+    elif [[ "${platform}" == 'darwin' ]]; then
+        echo "- If you downloaded the .zip archive, go to https://github.com/oscarsaleta/P4/releases/latest"
+    fi
+    echo "  and download the latest version from there to try again."
+    echo ""    
+}
+
+function error_mpfr {
+    echo "${bold}${red}[Error]${normal} Multiprecision mpfr library was not found in the system."
+    if [[ "${platform}" == 'linux' ]]; then
+        echo "Install it using the proper method for your distribution, e.g.:"
+        echo "    - Debian-based: sudo apt-get install libmpfr-dev"
+        echo "    - Fedora-based: sudo dnf install mpfr-devel"
+        echo "    - Arch-based: sudo pacman -S mpfr"
+    elif [[ "${platform}" == 'darwin' ]]; then
+        echo "You can install it using this command in a terminal: brew install mpfr"
+    fi
+    echo ""
+}
+
+function error_qmake {
+echo "${bold}${red}[Error]${normal} Error during execution of ${QMAKE}. Possible causes:"
+    if [[ "${platform}" == 'linux' ]]; then
+        echo "    - Qt5 is not properly installed:"
+        echo "        - Debian-based: sudo apt install qt5-default qt5-qmake"
+        echo "        - Fedora-based: sudo dnf install qt5*-devel --allowerasing"
+        echo "        - Arch-based: sudo pacman -S qt5-base"
+        echo "    - Your Linux distribution uses a different name for the qmake executable"
+        echo "      (e.g. in Fedora-based distributions, it is called"
+        echo "      qmake-qt5). In this case, run"
+        echo "        env QMAKE=/path/to/qmake ./compile_install_p4 --verbose"
+        echo "      (where /path/to/qmake should be replaced by the actual path of qmake in"
+        echo "      your system)."
+    elif [[ "${platform}" == 'darwin' ]]; then
+        echo "    - Qt5 is not properly installed. In this case,"
+        echo "      install Qt following the instructions of http://doc.qt.io/qt-5/osx.html or"
+        echo "      using the Homebrew package manager (brew install qt)."
+        echo "    - The binary was not found. In this case, run the script as:"
+        echo "        env QMAKE=/path/to/qmake ./compile_install_p4 --verbose"
+        echo "      (where /path/to/qmake should be replaced by the actual path of qmake in"
+        echo "      your system)."
+        echo "    - macOS SDK related. This means that Xcode is not properly installed."
+        echo "      Install Xcode from the App Store, agree to the Terms of Usage, and"
+        echo "      install the Command Line Developer Tools."
+    fi
+    echo ""
+}
+
+function error_compiler {
+    if [[ "${platform}" == 'linux' ]]; then
+        echo "${bold}${red}[Error]${normal} GCC is required to compile P4, and some libraries were not found"
+        echo "in the system."
+        echo "Install them using the proper method for your distribution, e.g.:"
+        echo "    - Debian-based (Debian/Ubuntu/Mint): sudo apt-get install gcc g++"
+        echo "    - Fedora-based (Fedora/Kokora/Arquetype): sudo dnf group install 'Development Tools'"
+        echo "    - Arch-based (Archlinux/Antergos): sudo pacman -S gcc"
+    elif [[ "${platform}" == 'darwin' ]]; then
+        echo "${bold}${red}[Error]${normal} Clang is required to compile P4, and it was not found in the system."
+        echo "Install Xcode from the App Store, execute it to agree with the Terms of Use,"
+        echo "and then install the command-line tools running the following in a terminal:"
+        echo "    xcode-select --install"
+    fi
+}
+
+function error_boost {
+    echo "${bold}${red}[Error]${normal} Boost libraries are needed for some dynamic properties of P4 to work."
+    if [[ "${platform}" == 'linux' ]]; then
+        echo "Install them using the proper method for your distribution, e.g.:"
+        echo "    - Debian-based (Debian/Ubuntu/Mint): sudo apt-get install libboost-dev"
+        echo "    - Fedora-based (Fedora/Kokora/Arquetype): sudo dnf install boost-devel"
+        echo "    - Arch-based (Archlinux/Antergos): sudo pacman -S boost"
+    elif [[ "{platform}" == 'darwin' ]]; then
+        echo "You can install it using this command in a terminal: brew install boost"
+    fi
+    echo ""
+}
+
+if [[ "${platform}" == 'linux' ]]; then
+    function error_qtmodules {
+        echo "${bold}${red}[Error]${normal} Some Qt5 modules were not found in the system."
+        echo "Install them using the proper method for your distribution, e.g.:"
+        echo "    - Debian-based: sudo apt install qt5-default qt5-qmake"
+        echo "    - Fedora-based: sudo dnf install qt5*-devel --allowerasing"
+        echo "    - Arch-based: sudo pacman -S qt5-base"
+        echo ""
+    }
+
+    function error_pkgconfig {
+        echo "${bold}${red}[Error]${normal} The command pkg-config is required in order to check for other"
+        echo "needed packages."
+        echo "Install it using the proper method for your distribution, e.g.:"
+        echo "    - Debian-based: sudo apt-get install pkg-config"
+        echo "    - Fedora-based: sudo dnf install pkgconfig"
+        echo "    - Arch-based: sudo pacman -S pkg-config"
+        echo ""
+    }
+
+    function error_ldconfig {
+        echo "${bold}${red}[Error]${normal} Cannot execute command ldconfig, make sure it is available and you"
+        echo "have permission to use this command."
+        echo ""
+    }
+
+fi
+
+
+
+# Check input variables
+if [ "$1" = "--verbose" ] || [ "$2" = "--verbose" ] || [ "$3" = "--verbose" ]; then
+    verbose=true
+else
+    verbose=false
+fi
+if [ "$1" = "--uninstall" ] || [ "$2" = "--uninstall" ] || [ "$3" = "--uninstall" ]; then
+    only_uninstall=true
+else
+    only_uninstall=false
+fi
+if [ "$1" = "--debug" ] || [ "$2" = "--debug" ] || [ "$3" = "--debug" ]; then
+    compile_debug="CONFIG+=debug"
+else
+    compile_debug=
+fi
+
+
+# Title
+if [[ $only_uninstall = false ]]; then
+    print_title 'install'
+    # Welcome screen
+    echo ""
+    echo "Welcome to the P4 compilation and installation script."
+    echo ""
+    echo "Optional arguments:"
+    echo "    ${bold}--verbose:${normal} verbose output in compilation"
+    echo "    ${bold}--uninstall:${normal} to uninstall an existing version of P4"
+    echo "    ${bold}--debug:${normal} to compile with debugging symbols"
+    echo "These options can be used together in any given order."
+    echo ""
+    read_variable 'yes' 'Continue with the execution of the script?'
+    if (echo "${input_variable}" | grep -iq "^n"); then
+        echo "${bold}${cyan}"
+        echo "=== ${green}Finished"
+        echo "${normal}"
+        exit 0
+    fi
+else
+    print_title 'uninstall'
+    echo ""
+    echo "Welcome to the P4 uninstaller script."
+    echo ""
+    echo "You are about to uninstall P4 from your system. You will be asked for"
+    echo "confirmation before completely removing P4."
+    echo ""
+    read_variable 'yes' 'Continue with the execution of the script?'
+    if (echo "${input_variable}" | grep -iq "^n"); then
+        echo "${bold}${cyan}"
+        echo "=== ${green}Finished"
+        echo "${normal}"
+        exit 0
+    fi
+fi
+
+# Uninstalling
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Checking for older P4 versions...${normal}"
+uninstalled=false
+installed_home=false
+installed_root=false
+
+# remove p4 from usr/local
+if [[ -d ${HOME}/p4 ]]; then
+    installed_home=true
+    read_variable 'yes' "- P4 installation found in ${HOME}/p4. Do you want to remove it?"
+    if (echo "${input_variable}" | grep -iq "^n"); then
+        echo "- Not removing P4 in ${HOME}/p4."
+    else
+        uninstalled=true
+        installed_home=false
+        rm -rf ${HOME}/p4
+        if [[ "${platform}" == 'linux' ]]; then
+            if [[ -f ${HOME}/.local/share/applications/p4.desktop ]]; then
+                rm -f ${HOME}/.local/share/applications/p4.desktop
+            fi
+        fi
+    fi
+fi
+
+# remove p4 from home
+if [[ -d /usr/local/p4 ]]; then
+    installed_root=true
+    read_variable 'yes' '- P4 installation found in /usr/local/p4. Do you want to remove it?'
+    if (echo "${input_variable}" | grep -iq "^n"); then
+        echo "- Not removing P4 in /usr/local/p4."
+    else
+        uninstalled=true
+        installed_root=false
+        sudo rm -rf /usr/local/p4
+        sudo rm -f /usr/local/bin/p4
+        if [[ "${platform}" == 'linux' ]]; then
+            if [[ -f /usr/share/applications/p4.desktop ]]; then
+                sudo rm -f /usr/share/applications/p4.desktop
+            fi
+        fi
+    fi
+fi
+
+if [[ ${uninstalled} = false ]]; then
+    echo "- No older P4 version removed."
+fi
+
+# remove configuration
+if [[ ${uninstalled} = true ]]; then
+    if [[ -d ${HOME}/.config/P4 ]]; then
+        read_variable 'no' '- Do you want to remove P4 configuration?'
+        if (echo "${input_variable}" | grep -iq "^y"); then
+            if [[ "${platform}" == 'linux' ]]; then
+                rm -rf ${HOME}/.config/P4
+            elif [[ "${platform}" == 'darwin' ]]; then
+                rm -f ${HOME}/Library/p4.plist
+            fi
+        fi
+    fi
+fi
+
+
+# After uninstalling, check if we want to continue
+if [[ ${only_uninstall} = true ]]; then
+    echo "${bold}${cyan}"
+    echo "=== ${green} Finished."
+    echo "${normal}"
+    exit 0
+fi
+
+# Check for dependencies
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Checking for dependencies...${normal}"
+# qmake check
+echo "- Looking for qmake... "
+if (command -v ${QMAKE} >/dev/null 2>&1); then
+    echo "${green}[Success]${normal}"
+else
+    error_qmake
+    if [[ "${platform}" == 'linux' ]]; then
+        exit 1
+    elif [[ "${platform}" == 'darwin' ]]; then
+        install_qt
+    fi
+fi
+
+if [[ "${platform}" == 'linux' ]]; then
+    # pkconfig check
+    echo "- Looking for pkg-config... "
+    if (command -v pkg-config >/dev/null 2>&1); then
+        echo "${green}[Success]${normal}"
+        echo "- Looking for Qt5 modules... "
+        # Qt modules check
+        if (pkg-config --exists Qt5Core && pkg-config --exists Qt5Gui && pkg-config --exists Qt5Widgets && pkg-config --exists Qt5PrintSupport); then
+            echo "${green}[Success]${normal}"
+        else
+            error_qtmodules
+            exit 1
+        fi
+    else
+        error_pkgconfig
+        exit 1
+    fi
+    echo "- Looking for ldconfig..."
+    # ldconfig check
+    if (command -v ldconfig >/dev/null 2>&1); then
+        echo "${green}[Success]${normal}"
+        # gcc libraries check
+        echo "- Looking for compiler libraries..."
+        if (ldconfig -p | grep libstdc++ >/dev/null && ldconfig -p | grep libgcc_s >/dev/null && ldconfig -p | grep libc >/dev/null); then
+            echo "${green}[Success]${normal}"
+        else
+            error_compiler
+            exit 1
+        fi
+        # boost libs check
+        echo "- Looking for Boost libraries..."
+        if (ldconfig -p | grep libboost >/dev/null); then
+            echo "${green}[Success]${normal}"
+        else
+            error_boost
+            exit 1
+        fi
+    else
+        echo "[Warning] ldconfig could not be executed, trying as super user..."
+        # gcc libraries check
+        echo "- Looking for compiler libraries..."
+        if (sudo ldconfig -p | grep libstdc++ >/dev/null && sudo ldconfig -p | grep libgcc_s >/dev/null && sudo ldconfig -p | grep libc >/dev/null); then
+            echo "${green}[Success]${normal}"
+        else
+            error_ldconfig
+            exit 1
+        fi
+        echo "- Looking for Boost libraries..."
+        # boost libs check
+        if (sudo ldconfig -p | grep libboost >/dev/null); then
+            echo "${green}[Success]${normal}"
+        else
+            error_boost
+            exit 1
+        fi
+    fi
+elif [[ ${platform} == 'darwin' ]]; then
+    echo "- Looking for Boost libraries..."
+    if (ls /usr/local/include | grep boost >/dev/null); then
+        echo "${green}[Success]${normal}"
+    else
+        error_boost
+        exit 1
+    fi
+fi
+
+# mpfr check
+mpfr_test
+
+# maple check
+echo "- Looking for Maple..."
+if (command -v maple >/dev/null 2>&1); then
+    echo "${green}[Success]${normal}"
+    maple_error_present=false
+else
+    error_maple
+    echo "- You can continue with the installation if your Maple version is 2015."
+    echo "  Otherwise, do not continue, because the necessary Maple scripts will not"
+    echo "  be generated, and P4 will not be able to work."
+    echo ""
+    read_variable 'no' '- Do you have Maple 2015 installed?'
+    if (echo "${input_variable}" | grep -iq "^y"); then
+        echo "- Continuing with execution. Remember to tell P4 where to find Maple 2015 after"
+        echo "  the installation."
+        maple_error_present=true
+    else
+        echo "- Aborting execution... Install Maple or add it to the path and try again."
+        exit 1
+    fi
+fi
+
+
+# set output pipe
+if [[ ${verbose} = false ]]; then
+    OUT=/dev/null
+else
+    OUT=/dev/stdout
+fi
+
+
+# make distclean?
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Cleaning old builds...${normal}"
+if [[ -f "Makefile" ]]; then
+    read_variable 'no' '- Do you want to clean previous compilations?'
+    if (echo "${input_variable}" | grep -iq "^y"); then
+        if (make distclean >${OUT}); then
+            echo "${green}[Success]${normal}"
+        else
+            echo "${bold}${red}[Error]${normal} Check make error messages"
+        fi
+    else
+        echo "- Not cleaning old build."
+    fi
+else
+    echo "- Nothing to clean"
+fi
+
+
+# qmake
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Executing qmake...${normal}"
+if (! ${QMAKE} ${compile_debug} -r P4.pro >${OUT}); then
+    error_qmake
+    exit 1
+else
+    echo "${green}[Success]${normal}"
+fi
+
+
+# Use multicore make for faster compilation
+if [[ "${platform}" == 'linux' ]]; then
+    CPUCNT=$(grep -c ^processor /proc/cpuinfo)
+elif [[ "${platform}" == 'darwin' ]]; then
+    CPUCNT=$(sysctl -a | grep ^machdep.cpu.thread_count: | sed 's/^.*: //')
+fi
+
+
+# Compile C++ code
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Compiling C++ code...${normal}"
+echo "- Will use ${CPUCNT} jobs for make. This will take a moment..."
+if (make -j${CPUCNT} >${OUT}); then
+    echo "${green}[Success]${normal}"
+else
+    echo "${bold}${red}[Error]${normal} Check compiler error messages"
+    exit 1
+fi
+
+
+# Compile Maple scripts
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Compiling Maple code...${normal}"
+if [[ -f src-mpl/p4.m ]]; then
+    echo "- Found precompiled Maple 2015 scripts."
+    if [[ ${maple_error_present} = false ]]; then
+        echo "- Do you want to recompile Maple scripts from src-mpl?"
+        read_variable 'no' '  If your Maple version is Maple 2015, this is not necessary.'
+        if (echo "${input_variable}" | grep -iq "^y"); then
+            echo "- Recompiling Maple scripts..."
+            cd src-mpl
+            make -f MakeTexMaple clean >${OUT}
+            cd ..
+            if (make -C src-mpl p4.m >${OUT}); then
+                echo "${green}[Success]${normal}"
+            else
+                echo "${bold}${red}[Error]${normal} Check compiler error messages"
+                exit 1
+            fi
+        else
+            echo "- Not recompiling Maple scripts."
+        fi
+    fi
+else
+    if [[ ${maple_error_present} = true ]]; then
+        error_p4m
+        exit 1
+    else
+        if (make -C src-mpl -f MakeTexMaple clean >${OUT}); then
+            if (make -C src-mpl -f MakeTexMaple all >${OUT}); then
+                echo "${green}[Success]${normal}"
+            fi
+        else
+            echo "${bold}${red}[Error]${normal} Check compiler error messages"
+            exit 1
+        fi
+    fi
+fi
+
+
+# make install (generate p4 directory in project root)
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Generating P4 directory tree...${normal}"
+if (make install >${OUT}); then
+    echo "${green}[Success]${normal}"
+else
+    echo "${bold}${red}[Error]${normal} Check make error messages"
+    exit 1
+fi
+
+
+# Install
+echo ""
+echo "${bold}${cyan}===${normal}${bold} Installing P4 in your system...${normal}"
+if [[ ${installed_root} = true ]]; then
+    read_variable 'no' "- Do you want to install P4 in ${HOME}/p4?"
+    if (echo "${input_variable}" | grep -iq "^y"); then
+        install_home
+    fi
+elif [[ ${installed_home} = true ]]; then
+    read_variable 'no' '- Do you want to install P4 in /usr/local/p4?'
+    if (echo "${input_variable}" | grep -iq "^y"); then
+        install_root
+    fi
+else
+    while : ; do
+        echo "- Where do you want to install P4 in your system?"
+        echo "    1: /usr/local/p4"
+        echo "    2: ${HOME}/p4"
+        echo "    3: cancel"
+        printf "Selection: "
+        read_variable
+        if [[ "${input_variable}" == '1' ]]; then
+            install_root
+            break
+        elif [[ "${input_variable}" == '2' ]]; then 
+            install_home
+            break
+        elif [[ "${input_variable}" == '3' ]]; then
+            echo "- Not installing"
+            break
+        else
+            echo "- Invalid selection"
+        fi
+    done
+fi
+echo "${bold}${cyan}"
+echo "=== ${green}Finished."
+echo "${normal}"
