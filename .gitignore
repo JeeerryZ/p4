@@ -1,0 +1,5 @@
+**/.qtcreator
+./build/
+.qmake*
+README.md
+**Makefile**

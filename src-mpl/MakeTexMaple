@@ -1,0 +1,87 @@
+#  This file is part of P4
+# 
+#  Copyright (C) 1996-2017  J.C. Artés, P. De Maesschalck, F. Dumortier,
+#                           C. Herssens, J. Llibre, O. Saleta, J. Torregrosa
+# 
+#  P4 is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+# 
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#############################################################################
+# Makefile for building: p4.m
+#############################################################################
+
+####### Files
+
+MAPLE	      = maple
+MPLSTRIP      = mplstrip/mplstrip
+
+SOURCES       = blowup.tex	\
+		gcd.tex		\
+		infinity.tex	\
+		main.tex	\
+		num_coeff.tex	\
+		p4gcf.tex	\
+		realroot.tex	\
+		tools.tex	\
+		type.tex	\
+		weakfocus.tex	\
+		writelog.tex
+
+OBJECTS       = blowup.m	\
+		gcd.m		\
+		infinity.m	\
+		main.m		\
+		num_coeff.m	\
+		p4gcf.m		\
+		realroot.m	\
+		tools.m		\
+		type.m		\
+		weakfocus.m	\
+		writelog.m
+
+TARGET        = p4.m
+
+.SUFFIXES:	.tex .m
+.tex.m:
+		$(MPLSTRIP) -M=$(MAPLE) -head $<
+
+all:		$(TARGET)
+
+$(TARGET):	$(OBJECTS)
+
+blowup.m:	blowup.tex
+gcd.m:		gcd.tex
+infinity.m:	infinity.tex
+main.m:		main.tex	\
+		blowup.m	\
+		gcd.m		\
+		infinity.m	\
+		num_coeff.m	\
+		p4gcf.m		\
+		realroot.m	\
+		tools.m		\
+		type.m		\
+		weakfocus.m	\
+		writelog.m
+num_coeff.m:	num_coeff.tex
+p4gcf.m:	p4gcf.tex
+realroot.m:	realroot.tex
+tools.m:	tools.tex
+type.m:		type.tex
+weakfocus.m:	weakfocus.tex
+writelog.m:	writelog.tex
+
+
+.PHONY: clean
+clean:
+	rm -f *.mpl *.m
