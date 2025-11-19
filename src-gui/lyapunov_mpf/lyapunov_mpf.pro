@@ -24,7 +24,7 @@ include(../../P4.pri)
 
 DESTDIR = $$BUILD_DIR/lyapunov_mpf/
 
-CONFIG += console c++11
+CONFIG += console c++17
 
 SOURCES = lyapunov_mpf.cpp lypcoeff_mpf.cpp polynom_mpf.cpp \
           checktbl_mpf.cpp createtbl_mpf.cpp readvf_mpf.cpp
@@ -40,7 +40,7 @@ macx {
 }
 
 win32 {
-    INCLUDEPATH += D:/msys64/mingw64/include
+    INCLUDEPATH += -ID:/msys64/mingw64/include
     LIBS += -LD:/msys64/mingw64/lib -lgmp -lmpfr
 }
 
