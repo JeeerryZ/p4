@@ -29,14 +29,10 @@ CONFIG += c++17
 CONFIG += fwhopr
 CONFIG -= console
 
-macx {
-    CONFIG -= app_bundle
-    QMAKE_LFLAGS += -L/usr/local/opt/qt/lib
-    QMAKE_CXXFLAGS += -I/usr/local/opt/qt/include -I/usr/local/include
-}
+macx: CONFIG -= app_bundle
 
-INCLUDEPATH += D:\Qt\Tools\mingw64\include
-LIBS += -LD:\Qt\Tools\mingw64\lib -lgmp
+LIBS += $$GMP_LIBS
+!isEmpty(GMP_INCLUDEPATH): INCLUDEPATH += $$GMP_INCLUDEPATH
 
 DESTDIR = $$BUILD_DIR/p4/
 

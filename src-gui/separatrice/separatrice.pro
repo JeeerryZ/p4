@@ -24,10 +24,6 @@ include(../../P4.pri)
 DESTDIR = $$BUILD_DIR/separatrice/
 
 CONFIG  += console c++11
-macx {
-    CONFIG -= app_bundle
-    QMAKE_LFLAGS += -L/usr/local/opt/qt/lib
-    QMAKE_CXXFLAGS += -I/usr/local/opt/qt/include
-}
+macx: CONFIG -= app_bundle
 HEADERS = ../version.h
 SOURCES = separatrice.cpp
