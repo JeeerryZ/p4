@@ -30,28 +30,7 @@ SOURCES = lyapunov_mpf.cpp lypcoeff_mpf.cpp polynom_mpf.cpp \
           checktbl_mpf.cpp createtbl_mpf.cpp readvf_mpf.cpp
 HEADERS = lyapunov_mpf.h ../version.h
 
-unix:LIBS += -lgmp -lmpfr
-macx {
-    CONFIG -= app_bundle
-    LIBS += -L"/usr/local/lib" -lgmp -L"/usr/local/lib/" -lmpfr
-    INCLUDEPATH += "/usr/local/include"
-    QMAKE_LFLAGS += -L/usr/local/opt/qt/lib
-    QMAKE_CXXFLAGS += -I/usr/local/opt/qt/include
-}
+macx: CONFIG -= app_bundle
 
-win32 {
-    INCLUDEPATH += -ID:/msys64/mingw64/include
-    LIBS += -LD:/msys64/mingw64/lib -lgmp -lmpfr
-}
-
-#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/mpir/dll/x64/release/ -lmpir
-#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/mpir/dll/x64/debug/ -lmpir
-
-#INCLUDEPATH += $$PWD/mpir/dll/x64/Release
-#DEPENDPATH += $$PWD/mpir/dll/x64/Release
-
-#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/mpfr/dll/x64/release/ -lmpfr
-#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/mpfr/dll/x64/debug/ -lmpfr
-
-#INCLUDEPATH += $$PWD/mpfr/dll/x64/Release
-#DEPENDPATH += $$PWD/mpfr/dll/x64/Release
+LIBS += $$GMP_MPFR_LIBS
+!isEmpty(GMP_INCLUDEPATH): INCLUDEPATH += $$GMP_INCLUDEPATH
