@@ -130,3 +130,35 @@ else
     fail "Qt / qmake not found — will install"
     MISSING_PKGS+=(qt)
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+phase 2 4 "Installing dependencies"
+
+# Install Homebrew itself if missing
+if [[ "$NEED_BREW" -eq 1 ]]; then
+    spinner_start "Installing Homebrew"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        </dev/null >>"$SCRIPT_DIR/brew_install.log" 2>&1 \
+        || die "Homebrew installation failed — see brew_install.log"
+    eval "$("$BREW_PREFIX/bin/brew" shellenv)"
+    ok "Homebrew installed"
+fi
+
+# Install missing formulae
+if [[ ${#MISSING_PKGS[@]} -eq 0 ]]; then
+    ok "All packages already installed — nothing to do"
+else
+    for pkg in "${MISSING_PKGS[@]}"; do
+        spinner_start "Installing $pkg"
+        brew install "$pkg" >>"$SCRIPT_DIR/brew_install.log" 2>&1 \
+            || die "Failed to install $pkg — see brew_install.log"
+        ok "$pkg installed"
+    done
+fi
+
+# Re-detect qmake after potential Qt install
+if [[ ! -x "$QMAKE" ]]; then
+    QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
+    [[ ! -x "$QMAKE" ]] && QMAKE="$(command -v qmake 2>/dev/null || true)"
+    [[ -x "$QMAKE" ]] || die "qmake still not found after install — is Qt installed?"
+fi
