@@ -62,3 +62,67 @@ finish() {
 }
 
 welcome
+
+# ── Architecture / Homebrew prefix ───────────────────────────────────────────
+ARCH="$(uname -m)"
+[[ "$ARCH" == "arm64" ]] && BREW_PREFIX="/opt/homebrew" || BREW_PREFIX="/usr/local"
+
+# ── Detection helpers ─────────────────────────────────────────────────────────
+has_brew_formula() { brew list --formula "$1" &>/dev/null; }
+has_pkg()          { pkg-config --exists "$1" 2>/dev/null; }
+
+# ── State filled by Phase 1 ───────────────────────────────────────────────────
+NEED_BREW=0        # 1 = homebrew itself is missing
+MISSING_PKGS=()    # brew formulae to install
+
+# ═══════════════════════════════════════════════════════════════════════════════
+phase 1 4 "Checking environment"
+
+# Homebrew
+spinner_start "Checking Homebrew"
+if command -v brew &>/dev/null; then
+    ok "Homebrew  $(brew --version | head -1)"
+else
+    fail "Homebrew not found — will install"
+    NEED_BREW=1
+fi
+
+# pkg-config
+spinner_start "Checking pkg-config"
+if command -v pkg-config &>/dev/null; then
+    ok "pkg-config found"
+else
+    fail "pkg-config missing — will install"
+    MISSING_PKGS+=(pkg-config)
+fi
+
+# GMP
+spinner_start "Checking gmp"
+if has_pkg gmp; then
+    ok "gmp  ($(pkg-config --modversion gmp 2>/dev/null || echo 'found'))"
+else
+    fail "gmp — not installed"
+    MISSING_PKGS+=(gmp)
+fi
+
+# MPFR
+spinner_start "Checking mpfr"
+if has_pkg mpfr; then
+    ok "mpfr  ($(pkg-config --modversion mpfr 2>/dev/null || echo 'found'))"
+else
+    fail "mpfr — not installed"
+    MISSING_PKGS+=(mpfr)
+fi
+
+# Qt / qmake
+spinner_start "Checking Qt"
+QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
+if [[ ! -x "$QMAKE" ]]; then
+    QMAKE="$(command -v qmake 2>/dev/null || true)"
+fi
+if [[ -x "$QMAKE" ]]; then
+    ok "Qt / qmake  ($("$QMAKE" --version 2>&1 | head -1))"
+else
+    fail "Qt / qmake not found — will install"
+    MISSING_PKGS+=(qt)
+fi
