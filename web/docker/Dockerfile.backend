@@ -1,0 +1,126 @@
+# =============================================================================
+# Dockerfile.backend — P4 Web Backend (C++ / Crow REST API)
+# =============================================================================
+#
+# Two-stage build:
+#
+#   STAGE 1 (builder)  — full Ubuntu with build toolchain; produces the binary.
+#   STAGE 2 (runtime)  — minimal Ubuntu with only runtime libs; copies binary.
+#
+# The final image is small (~60 MB) and has no compiler, headers, or cmake.
+#
+# Build context must be web/ (one level above this file):
+#   docker build -f docker/Dockerfile.backend -t wp4-backend .
+#
+# Runtime mounts (provided by docker-compose, not baked into the image):
+#   /opt/maple      — host Maple installation (read-only; license binds to host)
+#   /app/p4/bin     — P4 binaries: lyapunov, separatrice, p4.m, p4gcf.m
+#                     (built from src-gui/ via `make install` in the repo root)
+#   /tmp/p4         — scratch space for Maple temp files (named volume)
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Stage 1: builder
+# ---------------------------------------------------------------------------
+FROM ubuntu:22.04 AS builder
+
+# Prevent tzdata from opening an interactive prompt during apt-get.
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install the minimal set of packages needed to compile the project:
+#   cmake          — build system generator
+#   g++            — C++17 compiler
+#   libboost-dev   — Crow uses Boost.Asio for its async HTTP I/O
+#   libboost-system-dev — Boost.System (Asio dependency)
+#   libssl-dev     — Crow supports optional TLS; keep the dep so the binary
+#                    links even if TLS isn't used (Crow checks at compile time)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake \
+        g++ \
+        libboost-dev \
+        libboost-system-dev \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Copy only the backend source tree.
+# We intentionally copy just backend/ so Docker layer caching works well:
+# changing the frontend or docker config won't invalidate the C++ build layer.
+COPY backend/ ./backend/
+
+WORKDIR /src/backend
+
+# Configure: out-of-source build in /src/build.
+# CMAKE_BUILD_TYPE=Release enables -O2 and strips debug symbols from the binary.
+# CMAKE_EXPORT_COMPILE_COMMANDS=ON is already set in CMakeLists.txt but we
+# repeat it here to make the intent explicit.
+RUN cmake -B /src/build \
+          -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build /src/build --parallel "$(nproc)"
+
+# ---------------------------------------------------------------------------
+# Stage 2: runtime
+# ---------------------------------------------------------------------------
+FROM ubuntu:22.04 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Runtime dependencies only — no compiler, no headers:
+#   libboost-system  — Crow/Asio needs the Boost.System shared library
+#   libssl3          — TLS support (same reasoning as builder stage)
+#   ca-certificates  — needed if the backend ever makes outbound HTTPS calls
+#   gosu             — lets us drop from root to a dedicated user cleanly
+#
+# We do NOT install Maple here.  Maple's license is hardware-bound so it must
+# run from a bind-mount of the host installation.  See docker-compose.yml.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libboost-system1.74.0 \
+        libssl3 \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for the backend process.
+# Running as root inside Docker is a security risk; this user has no special
+# privileges and owns only /app and /tmp/p4.
+RUN groupadd -r wp4 && useradd -r -g wp4 -d /app wp4
+
+WORKDIR /app
+
+# Copy the compiled binary from the builder stage.
+COPY --from=builder /src/build/wp4-backend /app/wp4-backend
+
+# /app/p4/bin is the expected location for the P4 runtime files
+# (lyapunov, lyapunov_mpf, separatrice, p4.m, p4gcf.m).
+# This directory is populated at runtime via a bind-mount from the host's
+# P4 install directory (built from src-gui/ with `make install`).
+# We create it here so the mount point exists inside the image.
+RUN mkdir -p /app/p4/bin && chown -R wp4:wp4 /app
+
+# /tmp/p4 is the scratch directory for Maple input/output files.
+# Each evaluation writes a uniquely-named .txt (input) and reads back
+# _vec.tab, _fin.tab, _inf.tab, _fin.res, _inf.res.
+# It must be writable by the wp4 user.
+RUN mkdir -p /tmp/p4 && chown wp4:wp4 /tmp/p4
+
+USER wp4
+
+# Environment variable defaults.  All are overridable in docker-compose.yml
+# or via `docker run -e`.
+#
+# MAPLE_PATH     — absolute path to the maple binary inside the container.
+#                  Maple is bind-mounted from the host at /opt/maple.
+# P4_BIN_DIR     — directory containing the P4 helper binaries and Maple scripts.
+#                  Bind-mounted from the host's P4 install.
+# P4_TMP_DIR     — scratch directory for per-request temp files.
+# P4_MAPLE_DIR   — directory where p4.m / p4gcf.m live (usually same as P4_BIN_DIR).
+# PORT           — HTTP port the Crow server listens on.  nginx proxies to this.
+ENV MAPLE_PATH=/opt/maple/bin/maple \
+    P4_BIN_DIR=/app/p4/bin \
+    P4_TMP_DIR=/tmp/p4 \
+    P4_MAPLE_DIR=/app/p4/bin \
+    PORT=8080
+
+EXPOSE 8080
+
+CMD ["/app/wp4-backend"]
