@@ -13,7 +13,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 #ifdef _WIN32
 #  include <windows.h>

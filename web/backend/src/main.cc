@@ -1,4 +1,4 @@
-#include "../third_party/crow/crow_all.h"
+#include "crow_all.h"
 #include "api/EvaluateHandler.h"
 
 #include <cstdlib>

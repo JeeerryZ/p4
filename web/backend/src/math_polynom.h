@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "file_tab.h"
+#include "p4_types.h"
 
 double eval_term1(P4POLYNOM1 p, double value);
 double eval_term2(P4POLYNOM2 f, double *value);

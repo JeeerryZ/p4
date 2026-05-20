@@ -3,6 +3,7 @@ project(wp4-backend CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Boost is required by Crow (header-only for Crow's async I/O)
 find_package(Boost REQUIRED COMPONENTS system)
@@ -30,6 +31,10 @@ target_link_libraries(wp4-backend
     ${Boost_LIBRARIES}
     pthread
 )
+
+# Silence MSVC/clangd "deprecated" warnings for fopen/fscanf/strcpy on Windows.
+# These are standard POSIX functions; this define is a no-op on Linux/GCC.
+target_compile_definitions(wp4-backend PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # Compiler flags
 target_compile_options(wp4-backend PRIVATE
