@@ -9,6 +9,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$SCRIPT_DIR/p4"
 BUILD_DIR="$SCRIPT_DIR/build"
 
+# ── Flags ─────────────────────────────────────────────────────────────────────
+CLEAN=0
+for arg in "$@"; do
+    [[ "$arg" == "--clean" ]] && CLEAN=1
+done
+
+if [[ "$CLEAN" -eq 1 ]]; then
+    printf '\033[1;33mCleaning build/ and p4/ ...\033[0m\n'
+    rm -rf "$BUILD_DIR" "$INSTALL_DIR"
+    printf '\033[1;32mDone.\033[0m\n'
+    exit 0
+fi
+
 # ── Colors ──────────────────────────────────────────────────────────────────
 BOLD=$'\033[1m';  DIM=$'\033[2m';   NC=$'\033[0m'
 RED=$'\033[0;31m';  GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; CYAN=$'\033[0;36m'
