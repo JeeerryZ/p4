@@ -170,7 +170,7 @@ JOBS="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
 mkdir -p "$BUILD_DIR"
 
 spinner_start "Configuring with qmake"
-"$QMAKE" -r "$SCRIPT_DIR/P4.pro" -o "$BUILD_DIR/Makefile" \
+( cd "$BUILD_DIR" && "$QMAKE" -r "$SCRIPT_DIR/P4.pro" ) \
     >"$BUILD_DIR/qmake.log" 2>&1 \
     || die "qmake failed — see build/qmake.log"
 ok "qmake configured"
