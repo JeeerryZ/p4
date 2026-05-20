@@ -1,108 +1,112 @@
-# P4 Compilation Guide
+# P4 — Polynomial Planar Phase Portraits
 
-## This is a fork of https://github.com/oscarsaleta/P4
+P4 draws the planar phase portrait of any polynomial differential system on the Poincaré or Poincaré-Lyapunov compactified plane.
 
-## Prerequisites
-
-- Qt Framework (Qt5 or Qt6)
-- GMP and MPFR libraries (for arbitrary precision arithmetic)
-- Appropriate compiler/toolchain:
-  - Windows: MinGW (suggested), MSYS2, or Visual Studio Qt kit
-  - Linux: GCC or Clang
-  - macOS: Xcode command line tools, Homebrew, or MacPorts
+> Fork of [oscarsaleta/P4](https://github.com/oscarsaleta/P4)
 
 ---
 
-## 1. Configuring Library Paths
+## Dependencies
 
-Before compilation, you must edit two project files:
+| Dependency | Purpose |
+|---|---|
+| Qt 5 or Qt 6 | GUI framework |
+| GMP | Arbitrary-precision integers |
+| MPFR | Arbitrary-precision floating point |
+| Maple | Symbolic algebra backend (**required at runtime**) |
 
-### Files to Edit
-
-- p4.pro
-- lyapunov.pro
-
-### What to Change
-
-In each file, find the lines that set the library/include directories for GMP and MPFR.
-Set them according to your operating system and where the libraries are installed.
-
-#### Example (Windows/MinGW):
-
-INCLUDEPATH += C:/msys64/mingw64/include
-LIBS += -LC:/msys64/mingw64/lib -lgmp -lmpfr
-
-#### Example (macOS/Homebrew):
-
-INCLUDEPATH += /opt/homebrew/include
-LIBS += -L/opt/homebrew/lib -lgmp -lmpfr
-
-Or, sometimes libraries might be under /usr/local/include and /usr/local/lib.
-
-#### Example (Linux):
-
-INCLUDEPATH += /usr/include
-LIBS += -L/usr/lib -lgmp -lmpfr
-
-Note:
-
-- Make sure the paths match the actual location of your libraries!
-- You can check using `brew info gmp` and `brew info mpfr` (macOS) or `whereis libgmp.so`/`libmpfr.so` (Linux).
+Library paths for GMP and MPFR are detected automatically by `P4.pri` on all platforms. Manual editing of `.pro` files is not needed unless auto-detection fails.
 
 ---
 
-## 2. Building the Project
+## Building
 
-### Windows
+### macOS (one command)
 
-1. Open a Qt Command Prompt (or MSYS2 shell) with the appropriate compiler in your PATH.
-2. Run:
-   qmake -r p4.pro
-   mingw32-make
-   mingw32-make install
-   If your Qt kit is installed somewhere else, set the PATH accordingly.
+```bash
+bash install_mac.sh
+```
 
-### macOS
+The script installs Homebrew (if absent), installs all missing dependencies, builds, and deploys to `p4/` in the repo root. Use `--clean` to wipe a previous build:
 
-1. Open Terminal.
-2. Make sure you have Homebrew installed (for GMP/MPFR):
-   brew install gmp mpfr
-3. Run:
-   qmake -r p4.pro
-   make
-   make install
-   If libraries are not found, ensure your INCLUDEPATH and LIBS in .pro files match /opt/homebrew/include and /opt/homebrew/lib (Apple Silicon) or /usr/local/include/lib (Intel Macs).
+```bash
+bash install_mac.sh --clean
+```
 
 ### Linux
 
-1. Install Qt, GMP, MPFR via package manager (e.g., `sudo apt install qtbase5-dev libgmp-dev libmpfr-dev`)
-2. Run:
-   qmake -r p4.pro
-   make
-   sudo make install
-   Make sure LIBS and INCLUDEPATH in your .pro files are correct.
+```bash
+sudo apt install qtbase5-dev libgmp-dev libmpfr-dev   # Debian/Ubuntu
+qmake -r P4.pro
+make -j$(nproc)
+sudo make install
+```
+
+### Windows (MSYS2 / MinGW)
+
+```bash
+pacman -S mingw-w64-x86_64-qt6-base mingw-w64-x86_64-gmp mingw-w64-x86_64-mpfr
+qmake -r P4.pro
+mingw32-make -j$(nproc)
+mingw32-make install
+```
 
 ---
 
-## 3. Troubleshooting
+## Install Layout
 
-- If you get linker/include errors, double-check that path settings in both .pro files correctly point to the include and library directories for GMP/MPFR.
-- You may need to install development headers (`-dev` packages on Linux).
-- On Mac, sometimes libraries are only visible after running `brew link gmp mpfr --force`.
+After `make install` (or `install_mac.sh`), P4 is deployed to `p4/` in the repo root:
+
+```
+p4/
+├── bin/        p4, lyapunov, lyapunov_mpf, separatrice, p4.m, p4gcf.m
+├── help/       HTML documentation and images
+└── sumtables/  Cache directory (must be writable)
+```
+
+Launch with:
+
+```bash
+./p4/bin/p4
+```
 
 ---
 
-## Summary
+## Components
 
-- Edit p4.pro and lyapunov.pro to match your system's GMP/MPFR locations.
-- Run `qmake -r p4.pro` and then `make`/`mingw32-make` depending on platform.
-- Use `make install` (or `mingw32-make install`) if needed.
-- On Mac, Homebrew installs libraries to /opt/homebrew/include and /opt/homebrew/lib by default.
+| Directory | Description |
+|---|---|
+| `src-gui/p4` | Main Qt GUI application |
+| `src-gui/lyapunov` | Lyapunov constants calculator (double precision) |
+| `src-gui/lyapunov_mpf` | Lyapunov constants calculator (arbitrary precision) |
+| `src-gui/separatrice` | Separatrix numerical integrator |
+| `src-mpl/` | Maple scripts (`p4.m`, `p4gcf.m`) — symbolic algebra backend |
+| `QtCreator/` | Legacy standalone project files (kept for reference) |
 
 ---
 
-If you need help finding your libraries, check the output of:
+## Troubleshooting
 
-- `brew info gmp mpfr` (macOS)
-- `pkg-config --cflags --libs gmp mpfr` (Linux)
-- Or the installation paths in your Qt environment (Windows)
+**GMP/MPFR not found on macOS**
+```bash
+brew install gmp mpfr
+```
+
+**GMP/MPFR not found on Windows**
+```bash
+pacman -S mingw-w64-x86_64-gmp mingw-w64-x86_64-mpfr
+```
+
+**qmake picks up the wrong Qt version**
+Set `PATH` to the correct Qt bin directory before running qmake, or invoke it with its full path (e.g. `/opt/homebrew/opt/qt/bin/qmake`).
+
+**Build log locations** (after running `install_mac.sh`)
+- `build/qmake.log` — qmake configuration output
+- `build/make.log` — compiler output
+- `brew_install.log` — Homebrew install output
+
+---
+
+## License
+
+GNU Lesser General Public License v3 — see [LICENSE](LICENSE).
