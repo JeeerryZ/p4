@@ -20,7 +20,7 @@ _SPIN_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
 spinner_start() {
     local label="$1"
-    ( local i=0
+    ( i=0
       while true; do
           printf "\r  ${YELLOW}%s${NC}  %s" "${_SPIN_FRAMES[$i]}" "$label"
           i=$(( (i+1) % ${#_SPIN_FRAMES[@]} ))
@@ -31,7 +31,7 @@ spinner_start() {
 
 spinner_stop() {
     [[ -z "$_SPIN_PID" ]] && return
-    kill "$_SPIN_PID" 2>/dev/null; wait "$_SPIN_PID" 2>/dev/null || true
+    kill "$_SPIN_PID" 2>/dev/null; wait "$_SPIN_PID" 2>/dev/null || true  # || true: SIGTERM gives non-zero exit under set -e
     _SPIN_PID=""
     printf "\r\033[K"
 }
