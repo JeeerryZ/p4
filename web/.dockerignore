@@ -1,0 +1,35 @@
+# Files excluded from the Docker build context (web/ directory).
+#
+# The build context is web/ (passed by docker-compose as `context: .`).
+# Everything listed here is NOT sent to the Docker daemon, keeping the
+# context small and preventing accidental inclusion of build artifacts.
+
+# Build artifacts from local cmake runs
+backend/build/
+backend/CMakeFiles/
+backend/CMakeCache.txt
+backend/cmake_install.cmake
+backend/Makefile
+backend/compile_commands.json
+
+# The crow header is large (552 KB) and only needed in the builder stage.
+# It IS included (we need it), so we do NOT ignore it.
+# backend/third_party/  ← intentionally not ignored
+
+# Frontend (built separately; only dist/ gets mounted into nginx)
+frontend/
+frontend/node_modules/
+frontend/dist/
+
+# Docker config files (already in the build context directory but not
+# needed inside the container itself)
+docker/.env
+docker/.env.*
+!docker/.env.example
+
+# Editor and OS artifacts
+.DS_Store
+**/.DS_Store
+.vscode/
+*.swp
+*~

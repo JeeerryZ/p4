@@ -1,0 +1,135 @@
+# =============================================================================
+# docker-compose.yml — P4 Web stack
+# =============================================================================
+#
+# Services:
+#   backend   — C++ Crow REST API (built from web/backend/)
+#   nginx     — reverse proxy + future static file server for React SPA
+#
+# Usage:
+#   1. Copy web/docker/.env.example → web/docker/.env and fill in paths.
+#   2. Build P4 on the host: `bash install_mac.sh` or `make install` (Linux).
+#      This populates ../../p4/bin with lyapunov, separatrice, p4.m etc.
+#   3. From the web/ directory:
+#        docker compose --env-file docker/.env up --build
+#
+# Stopping:
+#   docker compose down
+#
+# Rebuilding just the backend after code changes:
+#   docker compose --env-file docker/.env up --build backend
+# =============================================================================
+
+services:
+
+  # ── Backend (Crow C++ REST API) ─────────────────────────────────────────────
+  backend:
+    build:
+      # Build context is web/ so the Dockerfile can COPY backend/ cleanly.
+      context: .
+      dockerfile: docker/Dockerfile.backend
+
+    # Container name makes logs and `docker exec` easier.
+    container_name: wp4-backend
+
+    restart: unless-stopped
+
+    environment:
+      # These env vars are read by ScriptHandler.cc at startup to locate
+      # Maple and the P4 helper binaries.  They reference paths INSIDE the
+      # container (not the host paths — those are set in .env below).
+      MAPLE_PATH:   /opt/maple/bin/maple
+      P4_BIN_DIR:   /app/p4/bin
+      P4_TMP_DIR:   /tmp/p4
+      P4_MAPLE_DIR: /app/p4/bin
+      PORT:         ${BACKEND_PORT:-8080}
+
+    volumes:
+      # Maple: read-only bind-mount of the host Maple installation.
+      # We mount the entire Maple directory (not just the binary) because
+      # the maple executable loads libraries from relative paths at runtime.
+      - ${MAPLE_HOST_DIR:-/opt/maple}:/opt/maple:ro
+
+      # P4 binaries: read-only bind-mount of the host's P4 install directory.
+      # Must contain: lyapunov, lyapunov_mpf, separatrice, p4.m, p4gcf.m
+      # These are produced by `make install` / `install_mac.sh` in the repo root.
+      - ${P4_HOST_BIN_DIR:-../../p4/bin}:/app/p4/bin:ro
+
+      # Scratch volume for Maple temp files (one per evaluation request).
+      # Named volume so Docker manages the lifecycle; the backend cleans up
+      # individual files after each successful request.
+      - p4_tmp:/tmp/p4
+
+    # The backend is internal — nginx is the only thing that should talk to it.
+    # We deliberately do NOT expose 8080 to the host here; all traffic goes
+    # through nginx so we have a single ingress point for rate-limiting, SSL etc.
+    expose:
+      - "${BACKEND_PORT:-8080}"
+
+    # Healthcheck: hit /api/health every 30 s.  Docker marks the container
+    # unhealthy if 3 consecutive checks fail, so nginx's depends_on condition
+    # waits for the backend to be ready before nginx starts accepting traffic.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-8080}/api/health"]
+      interval: 30s
+      timeout:   5s
+      retries:   3
+      start_period: 10s
+
+    networks:
+      - wp4_internal
+
+  # ── nginx (reverse proxy) ────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine          # Alpine-based: ~25 MB, minimal attack surface
+    container_name: wp4-nginx
+
+    restart: unless-stopped
+
+    ports:
+      # ${HOST_PORT} on the host → 80 inside the container.
+      # Change HOST_PORT in .env to avoid conflicts (e.g. HOST_PORT=8080).
+      - "${HOST_PORT:-80}:80"
+
+    volumes:
+      # Mount our custom nginx config (overwrites the default site).
+      - ./docker/nginx/wp4.conf:/etc/nginx/conf.d/default.conf:ro
+
+      # Phase 4 placeholder: when the React SPA is built, its dist/ output
+      # goes here so nginx can serve it as static files.
+      # Until then, requests to / return nginx's default 404 (that's fine —
+      # only /api/* matters during backend-only testing).
+      # - ../frontend/dist:/usr/share/nginx/html:ro   # ← uncomment in Phase 4
+
+    depends_on:
+      backend:
+        condition: service_healthy  # wait until backend passes its healthcheck
+
+    networks:
+      - wp4_internal    # talks to backend on the internal network
+      - wp4_external    # exposed to the outside world
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  # Internal network: only backend and nginx are on this network.
+  # The backend container is NOT on wp4_external — it can never be reached
+  # directly from outside, only through nginx.
+  wp4_internal:
+    driver: bridge
+
+  # External network: nginx is the only container here.
+  wp4_external:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  # Named volume for Maple scratch files.
+  # Docker manages this directory; it persists across container restarts
+  # (useful for debugging — you can inspect leftover .tab files on failure).
+  # To wipe it: `docker volume rm p4web_p4_tmp`
+  p4_tmp:
+    name: p4web_p4_tmp
