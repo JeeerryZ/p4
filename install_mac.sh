@@ -65,7 +65,11 @@ welcome
 
 # ── Architecture / Homebrew prefix ───────────────────────────────────────────
 ARCH="$(uname -m)"
-[[ "$ARCH" == "arm64" ]] && BREW_PREFIX="/opt/homebrew" || BREW_PREFIX="/usr/local"
+if [[ "$ARCH" == "arm64" ]]; then
+    BREW_PREFIX="/opt/homebrew"
+else
+    BREW_PREFIX="/usr/local"
+fi
 
 # ── Detection helpers ─────────────────────────────────────────────────────────
 has_brew_formula() { brew list --formula "$1" &>/dev/null; }
@@ -98,7 +102,7 @@ fi
 
 # GMP
 spinner_start "Checking gmp"
-if has_pkg gmp; then
+if command -v pkg-config &>/dev/null && has_pkg gmp; then
     ok "gmp  ($(pkg-config --modversion gmp 2>/dev/null || echo 'found'))"
 else
     fail "gmp — not installed"
@@ -107,7 +111,7 @@ fi
 
 # MPFR
 spinner_start "Checking mpfr"
-if has_pkg mpfr; then
+if command -v pkg-config &>/dev/null && has_pkg mpfr; then
     ok "mpfr  ($(pkg-config --modversion mpfr 2>/dev/null || echo 'found'))"
 else
     fail "mpfr — not installed"
