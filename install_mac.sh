@@ -180,3 +180,35 @@ make -C "$BUILD_DIR" -j"$JOBS" \
     >"$BUILD_DIR/make.log" 2>&1 \
     || die "Build failed — see build/make.log"
 ok "Build complete  ($JOBS parallel jobs)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+phase 4 4 "Installing to $INSTALL_DIR"
+
+mkdir -p "$INSTALL_DIR/bin" "$INSTALL_DIR/help" "$INSTALL_DIR/sumtables"
+chmod 777 "$INSTALL_DIR/sumtables"
+
+# Binaries
+for bin in p4/p4 lyapunov/lyapunov lyapunov_mpf/lyapunov_mpf separatrice/separatrice; do
+    name="$(basename "$bin")"
+    src="$BUILD_DIR/$bin"
+    spinner_start "Copying $name"
+    if [[ -f "$src" ]]; then
+        cp "$src" "$INSTALL_DIR/bin/"
+        ok "$name"
+    else
+        fail "$name  (not found — skipped)"
+    fi
+done
+
+# Maple scripts
+spinner_start "Copying Maple scripts"
+cp "$SCRIPT_DIR/src-mpl/p4.m"    "$INSTALL_DIR/bin/"
+cp "$SCRIPT_DIR/src-mpl/p4gcf.m" "$INSTALL_DIR/bin/"
+ok "Maple scripts  (p4.m, p4gcf.m)"
+
+# Help files
+spinner_start "Copying help files"
+cp -r "$SCRIPT_DIR/help/"* "$INSTALL_DIR/help/"
+ok "Help files"
+
+finish
