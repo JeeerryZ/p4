@@ -208,7 +208,7 @@ ok "Maple scripts  (p4.m, p4gcf.m)"
 
 # Help files
 spinner_start "Copying help files"
-cp -r "$SCRIPT_DIR/help/"* "$INSTALL_DIR/help/"
+cp -r "$SCRIPT_DIR/help/." "$INSTALL_DIR/help/"
 ok "Help files"
 
 finish
