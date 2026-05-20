@@ -162,3 +162,21 @@ if [[ ! -x "$QMAKE" ]]; then
     [[ ! -x "$QMAKE" ]] && QMAKE="$(command -v qmake 2>/dev/null || true)"
     [[ -x "$QMAKE" ]] || die "qmake still not found after install — is Qt installed?"
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+phase 3 4 "Building P4"
+
+JOBS="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
+mkdir -p "$BUILD_DIR"
+
+spinner_start "Configuring with qmake"
+"$QMAKE" -r "$SCRIPT_DIR/P4.pro" -o "$BUILD_DIR/Makefile" \
+    >"$BUILD_DIR/qmake.log" 2>&1 \
+    || die "qmake failed — see build/qmake.log"
+ok "qmake configured"
+
+spinner_start "Compiling ($JOBS jobs)"
+make -C "$BUILD_DIR" -j"$JOBS" \
+    >"$BUILD_DIR/make.log" 2>&1 \
+    || die "Build failed — see build/make.log"
+ok "Build complete  ($JOBS parallel jobs)"
