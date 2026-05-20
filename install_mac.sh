@@ -2,114 +2,63 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# P4 macOS installer
-# Installs dependencies via Homebrew, builds with qmake, and copies the app
-# to <repo-root>/p4/ (matching the layout defined in P4.pro).
+# P4 macOS Installer — animated
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$SCRIPT_DIR/p4"
 BUILD_DIR="$SCRIPT_DIR/build"
 
-# ---- Helpers ---------------------------------------------------------------
+# ── Colors ──────────────────────────────────────────────────────────────────
+BOLD=$'\033[1m';  DIM=$'\033[2m';   NC=$'\033[0m'
+RED=$'\033[0;31m';  GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; CYAN=$'\033[0;36m'
+BRED=$'\033[1;31m'; BGREEN=$'\033[1;32m'; BCYAN=$'\033[1;36m'
 
-info()    { echo "[info]  $*"; }
-success() { echo "[ok]    $*"; }
-warn()    { echo "[warn]  $*"; }
-die()     { echo "[error] $*" >&2; exit 1; }
+# ── Spinner ──────────────────────────────────────────────────────────────────
+_SPIN_PID=""
+_SPIN_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
-require_confirm() {
-    read -r -p "$1 [y/N] " ans
-    [[ "$ans" =~ ^[Yy]$ ]] || die "Aborted."
+spinner_start() {
+    local label="$1"
+    ( local i=0
+      while true; do
+          printf "\r  ${YELLOW}%s${NC}  %s" "${_SPIN_FRAMES[$i]}" "$label"
+          i=$(( (i+1) % ${#_SPIN_FRAMES[@]} ))
+          sleep 0.08
+      done ) &
+    _SPIN_PID=$!
 }
 
-# ---- Detect architecture / Homebrew prefix ---------------------------------
+spinner_stop() {
+    [[ -z "$_SPIN_PID" ]] && return
+    kill "$_SPIN_PID" 2>/dev/null; wait "$_SPIN_PID" 2>/dev/null || true
+    _SPIN_PID=""
+    printf "\r\033[K"
+}
 
-ARCH="$(uname -m)"
-if [[ "$ARCH" == "arm64" ]]; then
-    BREW_PREFIX="/opt/homebrew"
-else
-    BREW_PREFIX="/usr/local"
-fi
+trap 'spinner_stop' EXIT
 
-# ---- Check Homebrew --------------------------------------------------------
+# ── Step result helpers ───────────────────────────────────────────────────────
+ok()   { spinner_stop; printf "  ${BGREEN}✓${NC}  %s\n" "$*"; }
+fail() { spinner_stop; printf "  ${BRED}✗${NC}  %s\n" "$*"; }
+die()  { fail "$*"; exit 1; }
 
-if ! command -v brew &>/dev/null; then
-    die "Homebrew not found. Install it from https://brew.sh and re-run this script."
-fi
-info "Homebrew found at $(brew --prefix)"
+phase() {   # phase <n> <total> <name>
+    echo
+    printf "${BCYAN}${BOLD}[ Phase %s/%s ]  %s${NC}\n" "$1" "$2" "$3"
+}
 
-# ---- Install required formulae ---------------------------------------------
+welcome() {
+    printf "\n${BCYAN}${BOLD}╔══════════════════════════════════════╗${NC}\n"
+    printf   "${BCYAN}${BOLD}║        P4  macOS  Installer          ║${NC}\n"
+    printf   "${BCYAN}${BOLD}╚══════════════════════════════════════╝${NC}\n\n"
+}
 
-MISSING=()
-for formula in qt gmp mpfr; do
-    if ! brew list --formula "$formula" &>/dev/null; then
-        MISSING+=("$formula")
-    fi
-done
+finish() {
+    echo
+    printf "${BGREEN}${BOLD}══════════════════════════════════════${NC}\n"
+    printf "${BGREEN}${BOLD}  P4 installed → %s/bin/p4${NC}\n" "$INSTALL_DIR"
+    printf "${BGREEN}${BOLD}══════════════════════════════════════${NC}\n\n"
+}
 
-if [[ ${#MISSING[@]} -gt 0 ]]; then
-    warn "The following Homebrew packages are not installed: ${MISSING[*]}"
-    require_confirm "Install them now?"
-    brew install "${MISSING[@]}"
-fi
-success "All Homebrew dependencies satisfied (qt, gmp, mpfr)"
-
-# ---- Locate qmake ----------------------------------------------------------
-
-# Prefer Homebrew Qt's qmake over any system one
-QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
-if [[ ! -x "$QMAKE" ]]; then
-    # Fallback: search PATH
-    QMAKE="$(command -v qmake 2>/dev/null || true)"
-    [[ -x "$QMAKE" ]] || die "qmake not found. Make sure Homebrew Qt is installed: brew install qt"
-fi
-info "Using qmake: $QMAKE  ($(\"$QMAKE\" --version | head -1))"
-
-# ---- Detect CPU count for parallel make ------------------------------------
-
-JOBS="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
-
-# ---- Build -----------------------------------------------------------------
-
-info "Configuring build..."
-mkdir -p "$BUILD_DIR"
-cd "$SCRIPT_DIR"
-
-"$QMAKE" P4.pro -o "$BUILD_DIR/Makefile"
-cd "$BUILD_DIR"
-
-info "Building with $JOBS parallel jobs..."
-make -j"$JOBS"
-success "Build complete"
-
-# ---- Install ---------------------------------------------------------------
-
-info "Installing to $INSTALL_DIR ..."
-mkdir -p "$INSTALL_DIR/bin"
-mkdir -p "$INSTALL_DIR/help"
-mkdir -p "$INSTALL_DIR/sumtables"
-chmod 777 "$INSTALL_DIR/sumtables"
-
-# Binaries
-for bin in p4/p4 lyapunov/lyapunov lyapunov_mpf/lyapunov_mpf separatrice/separatrice; do
-    src="$BUILD_DIR/$bin"
-    if [[ -f "$src" ]]; then
-        cp "$src" "$INSTALL_DIR/bin/"
-        success "Copied $(basename "$src")"
-    else
-        warn "$src not found — skipping"
-    fi
-done
-
-# Maple scripts
-cp "$SCRIPT_DIR/src-mpl/p4.m"    "$INSTALL_DIR/bin/"
-cp "$SCRIPT_DIR/src-mpl/p4gcf.m" "$INSTALL_DIR/bin/"
-
-# Help files
-cp -r "$SCRIPT_DIR/help/"* "$INSTALL_DIR/help/"
-
-success "Installation complete: $INSTALL_DIR"
-echo
-echo "To launch P4:"
-echo "  $INSTALL_DIR/bin/p4"
+welcome
