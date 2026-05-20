@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../file_tab.h"
-#include "../third_party/crow/crow_all.h"
+#include "crow_all.h"
 #include <string>
 
 // Converts parsed WVFStudy results to a Crow JSON response value.

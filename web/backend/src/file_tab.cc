@@ -625,7 +625,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
                 sep1->direction = 1;
             if (!readSep1()) return false;
             if (point->chart == CHART_R2 || singinf_) {
-                sep1->next_sep = sep1 = new sep;
+                sep1->next_sep = new sep; sep1 = sep1->next_sep;
                 sep1->type = OT_UNSTABLE; sep1->d = 1; sep1->direction = 1;
                 if (!readSep1()) return false;
                 sep1->next_sep = new sep;
@@ -645,7 +645,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
                           ? -1 : 1);
         if (!readSep1()) return false;
         if (point->chart == CHART_R2 || singinf_) {
-            sep1->next_sep = sep1 = new sep;
+            sep1->next_sep = new sep; sep1 = sep1->next_sep;
             sep1->type = STYPE_STABLE; sep1->d = 1; sep1->direction = 1;
             if (!readSep1()) return false;
             sep1->next_sep = new sep;
@@ -664,7 +664,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
                           ? -1 : 1);
         if (!readSep1()) return false;
         if (point->chart == CHART_R2 || singinf_) {
-            sep1->next_sep = sep1 = new sep;
+            sep1->next_sep = new sep; sep1 = sep1->next_sep;
             sep1->type = STYPE_UNSTABLE; sep1->d = 1; sep1->direction = 1;
             if (!readSep1()) return false;
             sep1->next_sep = new sep;
@@ -689,7 +689,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
                 sep1->direction = 1;
             if (!readSep1()) return false;
             if (point->chart == CHART_R2 || singinf_) {
-                sep1->next_sep = sep1 = new sep;
+                sep1->next_sep = new sep; sep1 = sep1->next_sep;
                 sep1->type = STYPE_STABLE; sep1->d = 1; sep1->direction = 1;
                 if (!readSep1()) return false;
                 sep1->next_sep = new sep;
@@ -713,7 +713,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
             sep1->next_sep->type = STYPE_CENUNSTABLE; sep1->next_sep->d = 0;
             sep1->next_sep->direction = -1; sep1->next_sep->notadummy = false;
             sep1->next_sep->separatrice = sep1->separatrice;
-            sep1->next_sep->next_sep = sep1 = new sep;
+            sep1->next_sep->next_sep = new sep; sep1 = sep1->next_sep->next_sep;
             sep1->type = STYPE_STABLE; sep1->d = 1; sep1->direction = 1;
             if (!readSep1()) return false;
             sep1->next_sep = new sep;
@@ -736,7 +736,7 @@ bool WVFStudy::readSemiElementaryPoint(FILE *fp)
             sep1->next_sep->type = STYPE_CENSTABLE; sep1->next_sep->d = 0;
             sep1->next_sep->direction = -1; sep1->next_sep->notadummy = false;
             sep1->next_sep->separatrice = sep1->separatrice;
-            sep1->next_sep->next_sep = sep1 = new sep;
+            sep1->next_sep->next_sep = new sep; sep1 = sep1->next_sep->next_sep;
             sep1->type = STYPE_UNSTABLE; sep1->d = 1; sep1->direction = 1;
             if (!readSep1()) return false;
             sep1->next_sep = new sep;
