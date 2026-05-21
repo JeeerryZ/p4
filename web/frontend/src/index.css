@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #07080f;
+    color: #e6edf3;
+    font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+  }
+
+  textarea, input {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  ::selection {
+    background-color: #f0a02030;
+    color: #e6edf3;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background-color: #21262d;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #2d333b; }
+}
+
+@layer components {
+  .equation-input {
+    width: 100%;
+    background-color: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.9rem;
+    color: #e6edf3;
+    padding: 0.75rem 1rem;
+    resize: vertical;
+    line-height: 1.6;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .equation-input::placeholder { color: #7d859050; }
+  .equation-input:focus {
+    outline: none;
+    border-color: #f0a020;
+    box-shadow: 0 0 0 1px #f0a02030, 0 0 20px #f0a02010;
+  }
+  .equation-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
