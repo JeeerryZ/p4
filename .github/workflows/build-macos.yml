@@ -1,0 +1,101 @@
+name: macOS build
+
+# Runs on every push to main, on version tags, and can be triggered manually
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14   # Apple Silicon (ARM64) — matches the primary target hardware
+
+    steps:
+      # ── Source ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Dependencies ──────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: brew install qt gmp mpfr
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Configure with qmake
+        run: |
+          export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+          qmake -r P4.pro
+
+      - name: Compile
+        run: make -j$(sysctl -n hw.logicalcpu)
+
+      # ── Assemble .app bundle ──────────────────────────────────────────────
+      # p4 is built as a plain Unix binary (CONFIG -= app_bundle in p4.pro).
+      # We wrap it in a minimal .app so macdeployqt can bundle Qt frameworks,
+      # then place the helper binaries alongside p4 inside Contents/MacOS/.
+      - name: Wrap in .app and deploy Qt frameworks
+        run: |
+          export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+
+          mkdir -p P4.app/Contents/MacOS
+          cp build/p4/p4 P4.app/Contents/MacOS/
+
+          cat > P4.app/Contents/Info.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>     <string>p4</string>
+            <key>CFBundleIdentifier</key>     <string>cat.gsd.p4</string>
+            <key>CFBundleName</key>           <string>P4</string>
+            <key>CFBundleDisplayName</key>    <string>P4</string>
+            <key>CFBundleVersion</key>        <string>7.0.1</string>
+            <key>CFBundleShortVersionString</key> <string>7.0.1</string>
+            <key>CFBundlePackageType</key>    <string>APPL</string>
+            <key>LSMinimumSystemVersion</key> <string>12.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+          macdeployqt P4.app
+
+          # Helper binaries must sit alongside p4 so applicationDirPath() finds them
+          cp build/lyapunov/lyapunov \
+             build/lyapunov_mpf/lyapunov_mpf \
+             build/separatrice/separatrice \
+             P4.app/Contents/MacOS/
+
+      # ── Create DMG ────────────────────────────────────────────────────────
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+
+          create-dmg \
+            --volname "P4" \
+            --volicon "help/p4smallicon.png" \
+            --window-size 540 360 \
+            --icon-size 128 \
+            --icon "P4.app" 180 160 \
+            --app-drop-link 360 160 \
+            --hide-extension "P4.app" \
+            P4-macOS-arm64.dmg \
+            P4.app
+
+      # ── Artifacts ─────────────────────────────────────────────────────────
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: P4-macOS-arm64
+          path: P4-macOS-arm64.dmg
+          retention-days: 30
+
+      # On a version tag (v1.2.3), attach the DMG to a GitHub Release
+      - name: Attach DMG to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: P4-macOS-arm64.dmg
