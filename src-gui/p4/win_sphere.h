@@ -82,6 +82,10 @@ class QWinSphere : public QWidget
 
     /* Member functions */
 
+    bool hasHeightForWidth() const override { return true; }
+    int heightForWidth(int w) const override { return w; }
+    QSize sizeHint() const override;
+
     void paintEvent(QPaintEvent *);
 
     bool getChartPos(int, double, double, double *);

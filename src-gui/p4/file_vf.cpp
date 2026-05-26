@@ -98,21 +98,14 @@
 
 QInputVF *g_ThisVF = nullptr;
 
-QInputVF::QInputVF() : outputWindow_(nullptr)
+QInputVF::QInputVF()
 {
-    processText_ = nullptr;
-    terminateProcessButton_ = nullptr;
-    clearProcessButton_ = nullptr;
     evalProcess_ = nullptr;
     reset();
 }
 
 QInputVF::~QInputVF()
 {
-    if (outputWindow_ != nullptr) {
-        delete outputWindow_;
-        outputWindow_ = nullptr;
-    }
     // remove curve auxiliary files
     removeFile(getfilename_curvetable());
     removeFile(getfilename_curve());
@@ -1424,19 +1417,6 @@ void QInputVF::evaluate(void)
         } else
             s = s.append(filedotmpl);
 
-        /* Here a window for displaying the output text of the Maple process
-         * is created */
-        if (outputWindow_ == nullptr || processText_ == nullptr)
-            createProcessWindow();
-        else {
-            processText_->append("\n\n--------------------------------------"
-                                 "-----------------------------------------"
-                                 "\n\n");
-            terminateProcessButton_->setEnabled(true);
-            outputWindow_->show();
-            outputWindow_->raise();
-        }
-
         proc = new QProcess(this);
 
         proc->setWorkingDirectory(QDir::currentPath());
@@ -1459,7 +1439,7 @@ void QInputVF::evaluate(void)
         pa += getMapleExe();
         pa += " ";
         pa += filedotmpl;
-        processText_->append(pa);
+        emit logOutput(pa);
         proc->start(getMapleExe(), QStringList(filedotmpl),
                     QIODevice::ReadWrite);
 
@@ -1472,7 +1452,6 @@ void QInputVF::evaluate(void)
             evalFile_ = "";
             evalFile2_ = "";
             g_p4app->signalEvaluated(-1);
-            terminateProcessButton_->setEnabled(false);
         } else {
             evalProcess_ = proc;
             evalFile_ = filedotmpl;
@@ -1516,19 +1495,6 @@ void QInputVF::evaluateCurveTable()
         } else
             s = s.append(filedotmpl);
 
-        /* Here a window for displaying the output text of the Maple process
-         * is created */
-        if (outputWindow_ == nullptr)
-            createProcessWindow();
-        else {
-            processText_->append("\n\n--------------------------------------"
-                                 "-----------------------------------------"
-                                 "\n\n");
-            terminateProcessButton_->setEnabled(true);
-            outputWindow_->show();
-            outputWindow_->raise();
-        }
-
         // proc = new QProcess(this);
 
         // QProcess *proc;
@@ -1562,7 +1528,7 @@ void QInputVF::evaluateCurveTable()
         pa += getMapleExe();
         pa += " ";
         pa += filedotmpl;
-        processText_->append(pa);
+        emit logOutput(pa);
         proc->start(getMapleExe(), QStringList(filedotmpl),
                     QIODevice::ReadWrite);
 
@@ -1575,7 +1541,6 @@ void QInputVF::evaluateCurveTable()
             evalFile_ = "";
             evalFile2_ = "";
             g_p4app->signalEvaluated(-1);
-            terminateProcessButton_->setEnabled(false);
         } else {
             evalProcess_ = proc;
             evalFile_ = filedotmpl;
@@ -1617,19 +1582,6 @@ void QInputVF::evaluateIsoclinesTable()
         } else
             s = s.append(filedotmpl);
 
-        /* Here a window for displaying the output text of the Maple process
-         * is created */
-        if (outputWindow_ == nullptr || processText_ == nullptr)
-            createProcessWindow();
-        else {
-            processText_->append("\n\n--------------------------------------"
-                                 "-----------------------------------------"
-                                 "\n\n");
-            terminateProcessButton_->setEnabled(true);
-            outputWindow_->show();
-            outputWindow_->raise();
-        }
-
         QProcess *proc;
         if (evalProcess_ != nullptr) { // re-use process of last GCF
             proc = evalProcess_;
@@ -1662,7 +1614,7 @@ void QInputVF::evaluateIsoclinesTable()
         pa += getMapleExe();
         pa += " ";
         pa += filedotmpl;
-        processText_->append(pa);
+        emit logOutput(pa);
         proc->start(getMapleExe(), QStringList(filedotmpl),
                     QIODevice::ReadWrite);
 
@@ -1675,7 +1627,6 @@ void QInputVF::evaluateIsoclinesTable()
             evalFile_ = "";
             evalFile2_ = "";
             g_p4app->signalEvaluated(-1);
-            terminateProcessButton_->setEnabled(false);
         } else {
             evalProcess_ = proc;
             evalFile_ = filedotmpl;
@@ -1725,54 +1676,28 @@ void QInputVF::finishEvaluation(int exitCode)
         evalFile2_ = "";
     }
 
-    if (terminateProcessButton_ != nullptr)
-        terminateProcessButton_->setEnabled(false);
-
     if (evalProcess_ != nullptr) {
-        if (processText_ != nullptr) {
-            outputWindow_->show();
-            outputWindow_->raise();
-            QString buf;
-            buf = "\n----------------------------------------------------------"
-                  "----"
-                  "-----------------\n";
-            processText_->append(buf);
-            if (evalProcess_ != nullptr) {
-                if (evalProcess_->state() == QProcess::Running) {
-                    evalProcess_->terminate();
-                    QTimer::singleShot(5000, evalProcess_, SLOT(kill()));
-                    buf = "Kill signal sent to process.\n";
-                } else {
-                    if (!processfailed_)
-                        buf = QString("The process finished normally (%1)\n")
-                                  .arg(evalProcess_->exitCode());
-                    else {
-                        buf = QString("The process stopped abnormally (%1 : ")
-                        .arg(evalProcess_->exitCode());
-                        buf += processError_;
-                        buf += ")\n";
-                    }
-                }
-            } else {
-                if (processfailed_)
-                    buf = "The following error occured: " + processError_ + "\n";
-                else
-                    buf = "";
-            }
-            processText_->append(buf);
-        }
-    }
-    /*if (processText_ != nullptr) {
-        //      processText_->hide();
-        if (processText_->isActiveWindow()) {
-            if (!evaluatinggcf_)
-                g_p4stardlg->activateWindow();
+        QString buf;
+        buf = "\n----------------------------------------------------------"
+              "----"
+              "-----------------\n";
+        if (evalProcess_->state() == QProcess::Running) {
+            evalProcess_->terminate();
+            QTimer::singleShot(5000, evalProcess_, SLOT(kill()));
+            buf += "Kill signal sent to process.\n";
+        } else {
+            if (!processfailed_)
+                buf += QString("The process finished normally (%1)\n")
+                           .arg(evalProcess_->exitCode());
             else {
-                if (gcfDlg != nullptr)
-                    gcfDlg->activateWindow();
+                buf += QString("The process stopped abnormally (%1 : ")
+                           .arg(evalProcess_->exitCode());
+                buf += processError_;
+                buf += ")\n";
             }
         }
-    }*/
+        emit logOutput(buf);
+    }
 
     if (evaluatinggcf_)
         finishGcfEvaluation();
@@ -1930,7 +1855,7 @@ void QInputVF::readProcessStdout(void)
     QByteArray line;
     int i, j;
 
-    if (evalProcess_ == nullptr || processText_ == nullptr)
+    if (evalProcess_ == nullptr)
         return;
 
     while (1) {
@@ -1951,13 +1876,11 @@ void QInputVF::readProcessStdout(void)
                 line = t.left(i);
                 t = t.mid(i + 1);
             }
-            processText_->append(line);
             emit logOutput(QString::fromLatin1(line));
             i = t.indexOf('\n');
             j = t.indexOf('\r');
         }
         if (t.length() != 0) {
-            processText_->append(t);
             emit logOutput(QString::fromLatin1(t));
         }
     }
@@ -1968,85 +1891,17 @@ void QInputVF::readProcessStdout(void)
 // -----------------------------------------------------------------------
 void QInputVF::onTerminateButton(void)
 {
-    QString buf;
     if (evalProcess_ != nullptr) {
         if (evalProcess_->state() == QProcess::Running) {
-            buf = "\n----------------------------------------------------------"
-                  "---------------------\n";
-            processText_->append(buf);
+            emit logOutput("\n----------------------------------------------------------"
+                           "---------------------\n");
             evalProcess_->terminate();
             QTimer::singleShot(2000, evalProcess_, SLOT(kill()));
-            buf = "Kill signal sent to process.\n";
-            processText_->append(buf);
+            emit logOutput("Kill signal sent to process.\n");
             processfailed_ = true;
             processError_ = "Terminated by user";
         }
     }
-}
-
-// -----------------------------------------------------------------------
-//          CREATEPROCESSWINDOW
-// -----------------------------------------------------------------------
-void QInputVF::createProcessWindow(void)
-{
-    if (outputWindow_ != nullptr) {
-        if (outputWindow_->isVisible() == false)
-            outputWindow_->show();
-        outputWindow_->activateWindow();
-        outputWindow_->raise();
-        return;
-    }
-
-    outputWindow_ = new QWidget(nullptr);
-    outputWindow_->setWindowTitle("Output window");
-    outputWindow_->resize(530, 344);
-    if (g_p4smallicon != nullptr)
-        outputWindow_->setWindowIcon(*g_p4smallicon);
-
-    QVBoxLayout *vLayout = new QVBoxLayout(outputWindow_);
-    vLayout->setSpacing(3);
-    vLayout->setContentsMargins(5, 5, 5, 5);
-    QVBoxLayout *vLayout2 = new QVBoxLayout();
-    vLayout2->setSpacing(3);
-
-    processText_ = new QTextEdit(outputWindow_);
-    processText_->setLineWrapMode(QTextEdit::FixedColumnWidth);
-    processText_->setWordWrapMode(QTextOption::WrapAnywhere);
-    processText_->setFont(*(g_p4app->courierFont_));
-    processText_->setLineWrapColumnOrWidth(82);
-    processText_->setReadOnly(true);
-    processText_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    vLayout2->addWidget(processText_);
-
-    QHBoxLayout *hLayout = new QHBoxLayout();
-    hLayout->setSpacing(6);
-
-    hLayout->addStretch();
-    terminateProcessButton_ = new QPushButton("Terminate");
-    terminateProcessButton_->setFont(*(g_p4app->boldFont_));
-    terminateProcessButton_->setToolTip(
-        "Terminates the process.  First tries to send a "
-        "safe signal to the process.\nIf this does not "
-        "work, then after 2 seconds, the program is "
-        "abruptly terminated.");
-    hLayout->addWidget(terminateProcessButton_);
-
-    clearProcessButton_ = new QPushButton("Clear");
-    clearProcessButton_->setFont((*g_p4app->boldFont_));
-    clearProcessButton_->setToolTip("Clears this window");
-    hLayout->addWidget(clearProcessButton_);
-
-    vLayout2->addLayout(hLayout);
-    vLayout->addLayout(vLayout2);
-
-    outputWindow_->show();
-
-    QObject::connect(terminateProcessButton_, &QPushButton::clicked, this,
-                     &QInputVF::onTerminateButton);
-    QObject::connect(clearProcessButton_, &QPushButton::clicked, this, [=]() {
-        if (processText_ != nullptr)
-            processText_->clear();
-    });
 }
 
 // -----------------------------------------------------------------------
@@ -2150,16 +2005,6 @@ bool QInputVF::evaluateGcf(void)
     } else
         s = s.append(filedotmpl);
 
-    if (processText_ == nullptr)
-        createProcessWindow();
-    else {
-        processText_->append("\n\n------------------------------------------"
-                             "-------------------------------------\n\n");
-        terminateProcessButton_->setEnabled(true);
-        outputWindow_->show();
-        outputWindow_->raise();
-    }
-
     QProcess *proc;
     if (evalProcess_ != nullptr) { // re-use process of last GCF
         proc = evalProcess_;
@@ -2190,7 +2035,7 @@ bool QInputVF::evaluateGcf(void)
     pa += getMapleExe();
     pa += " ";
     pa += filedotmpl;
-    processText_->append(pa);
+    emit logOutput(pa);
     proc->start(getMapleExe(), QStringList(filedotmpl), QIODevice::ReadWrite);
     if (proc->state() != QProcess::Running &&
         proc->state() != QProcess::Starting) {
@@ -2201,7 +2046,6 @@ bool QInputVF::evaluateGcf(void)
         evalFile_ = "";
         evalFile2_ = "";
         g_p4app->signalCurveEvaluated(-1);
-        terminateProcessButton_->setEnabled(false);
         return false;
     } else {
         evalProcess_ = proc;
@@ -2556,16 +2400,6 @@ bool QInputVF::evaluateCurve(void)
     } else
         s = s.append(filedotmpl);
 
-    if (processText_ == nullptr)
-        createProcessWindow();
-    else {
-        processText_->append("\n\n------------------------------------------"
-                             "-------------------------------------\n\n");
-        terminateProcessButton_->setEnabled(true);
-        outputWindow_->show();
-        outputWindow_->raise();
-    }
-
     QProcess *proc;
     if (evalProcess_ != nullptr) { // re-use process of last GCF
         proc = evalProcess_;
@@ -2596,7 +2430,7 @@ bool QInputVF::evaluateCurve(void)
     pa += getMapleExe();
     pa += " ";
     pa += filedotmpl;
-    processText_->append(pa);
+    emit logOutput(pa);
     proc->start(getMapleExe(), QStringList(filedotmpl), QIODevice::ReadWrite);
     if (proc->state() != QProcess::Running &&
         proc->state() != QProcess::Starting) {
@@ -2607,7 +2441,6 @@ bool QInputVF::evaluateCurve(void)
         evalFile_ = "";
         evalFile2_ = "";
         g_p4app->signalCurveEvaluated(-1);
-        terminateProcessButton_->setEnabled(false);
         return false;
     } else {
         evalProcess_ = proc;
@@ -2848,16 +2681,6 @@ bool QInputVF::evaluateIsoclines()
     } else
         s = s.append(filedotmpl);
 
-    if (processText_ == nullptr)
-        createProcessWindow();
-    else {
-        processText_->append("\n\n------------------------------------------"
-                             "-------------------------------------\n\n");
-        terminateProcessButton_->setEnabled(true);
-        outputWindow_->show();
-        outputWindow_->raise();
-    }
-
     QProcess *proc;
     if (evalProcess_ != nullptr) { // re-use process of last GCF
         proc = evalProcess_;
@@ -2888,7 +2711,7 @@ bool QInputVF::evaluateIsoclines()
     pa += getMapleExe();
     pa += " ";
     pa += filedotmpl;
-    processText_->append(pa);
+    emit logOutput(pa);
     proc->start(getMapleExe(), QStringList(filedotmpl), QIODevice::ReadWrite);
     if (proc->state() != QProcess::Running &&
         proc->state() != QProcess::Starting) {
@@ -2899,7 +2722,6 @@ bool QInputVF::evaluateIsoclines()
         evalFile_ = "";
         evalFile2_ = "";
         g_p4app->signalCurveEvaluated(-1);
-        terminateProcessButton_->setEnabled(false);
         return false;
     } else {
         evalProcess_ = proc;

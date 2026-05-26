@@ -80,11 +80,7 @@ class QInputVF : public QObject
     QString evalFile_;
     QString evalFile2_;
 
-    QWidget *outputWindow_;
     QProcess *evalProcess_;
-    QTextEdit *processText_;
-    QPushButton *terminateProcessButton_;
-    QPushButton *clearProcessButton_;
 
     int numparams_;
     QString parlabel_[MAXNUMPARAMS];
@@ -194,7 +190,7 @@ class QInputVF : public QObject
     bool prepareIsoclines_LyapunovR2(int, int);
     bool evaluateIsoclines();
 
-    void createProcessWindow();
+
 
   signals:
     void saveSignal();

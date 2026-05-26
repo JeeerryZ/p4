@@ -104,6 +104,10 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     logArea_->setMinimumHeight(80);
     logArea_->hide();
 
+    btn_terminate_ = new QPushButton("Terminate", this);
+    btn_terminate_->setToolTip("Terminate the running Maple process");
+    btn_terminate_->hide();
+
     btn_clearLog_ = new QPushButton("Clear", this);
     btn_clearLog_->hide();
     btn_copyLog_ = new QPushButton("Copy", this);
@@ -178,7 +182,8 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     QGridLayout *layout1 = new QGridLayout();
     layout1->addWidget(btn_load_,0,0);
     layout1->addWidget(btn_save_,0,1);
-    layout1->addWidget(btn_eval_,1,0,1,2);
+    layout1->addWidget(btn_eval_,1,0);
+    layout1->addWidget(btn_terminate_,1,1);
 
     mainLayout_->addLayout(layout0);
     mainLayout_->addLayout(layout1);
@@ -349,6 +354,8 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
         logArea_->copy();
     });
     connect(g_ThisVF, &QInputVF::logOutput, logArea_, &QTextEdit::append);
+    connect(btn_terminate_, &QPushButton::clicked, g_ThisVF,
+            &QInputVF::onTerminateButton);
 
     // finishing
 
@@ -538,6 +545,7 @@ void QFindDlg::updateDlgData()
 void QFindDlg::signalEvaluating()
 {
     btn_eval_->setEnabled(false);
+    btn_terminate_->show();
     progressBar_->show();
     logArea_->clear();
     logArea_->show();
@@ -548,5 +556,6 @@ void QFindDlg::signalEvaluating()
 void QFindDlg::signalEvaluated()
 {
     btn_eval_->setEnabled(true);
+    btn_terminate_->hide();
     progressBar_->hide();
 }
