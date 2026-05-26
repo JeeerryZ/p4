@@ -61,6 +61,7 @@ class QFindDlg : public QWidget
     QPushButton *btn_load_;
     QPushButton *btn_save_;
     QPushButton *btn_eval_;
+    QPushButton *btn_terminate_;
     QProgressBar *progressBar_;
     QTextEdit *logArea_;
     QPushButton *btn_clearLog_;

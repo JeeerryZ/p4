@@ -85,6 +85,7 @@ QWinSphere::QWinSphere(QWidget *parent, QStatusBar *bar, bool isZoom, double x1,
     }
 
     parentWnd_ = parent;
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setMinimumSize(MINWIDTHPLOTWINDOW,
                    MINHEIGHTPLOTWINDOW); // THIS IS THE MINIMUM SIZE
     w_ = width();
@@ -567,25 +568,14 @@ void QWinSphere::saveAnchorMap(void)
 
 void QWinSphere::adjustToNewSize(void)
 {
-    double idealhd;
-    double reqratio;
-    double ratio;
-    QString buf;
     struct P4POLYLINES *t;
 
     w_ = width();
     h_ = height();
 
-    idealhd = w_;
+    double idealhd = w_;
     idealhd = (idealhd / dx_) * dy_;
-
     idealh_ = (int)(idealhd + .5);
-
-    reqratio = (((double)w_) / horPixelsPerMM_) / (idealh_ / verPixelsPerMM_);
-    ratio = (((double)w_) / horPixelsPerMM_) / (((double)h_) / verPixelsPerMM_);
-
-    buf = QString("Aspect Ratio = %f\n").arg((float)(ratio / reqratio));
-    msgBar_->showMessage(buf);
 
     while (circleAtInfinity_ != nullptr) {
         t = circleAtInfinity_;
@@ -670,6 +660,12 @@ void QWinSphere::refreshAfterResize(void)
         refreshTimeout_ = nullptr;
     }
     refresh();
+}
+
+QSize QWinSphere::sizeHint() const
+{
+    int s = qMin(NOMINALWIDTHPLOTWINDOW, NOMINALHEIGHTPLOTWINDOW);
+    return QSize(s, s);
 }
 
 void QWinSphere::resizeEvent(QResizeEvent *e)

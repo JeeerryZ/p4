@@ -198,20 +198,6 @@ void QStartDlg::onSaveSignal()
         settings.setValue("plotWindow", true);
     else
         settings.setValue("plotWindow", false);
-    if (g_ThisVF != nullptr) {
-        if (g_ThisVF->outputWindow_ != nullptr) {
-            settings.setValue("outputWindow", true);
-            settings.setValue("outputWindow-size",
-                              g_ThisVF->outputWindow_->size());
-            settings.setValue("outputWindow-pos",
-                              g_ThisVF->outputWindow_->pos());
-        }
-        if (g_ThisVF->processText_ != nullptr) {
-            settings.setValue("processText", true);
-            settings.setValue("processText-contents",
-                              g_ThisVF->processText_->toPlainText());
-        }
-    }
     settings.endGroup();
 }
 
@@ -253,19 +239,6 @@ void QStartDlg::onLoadSignal()
             settings.value("viewFiniteWindow-size").toSize());
         viewFiniteWindow_->move(
             settings.value("viewFiniteWindow-pos").toPoint());
-    }
-    if (settings.value("outputWindow").toBool() &&
-        settings.value("processText").toBool()) {
-        if (g_ThisVF != nullptr) {
-            g_ThisVF->createProcessWindow();
-            g_ThisVF->terminateProcessButton_->setDisabled(true);
-            g_ThisVF->outputWindow_->resize(
-                settings.value("outputWindow-size").toSize());
-            g_ThisVF->outputWindow_->move(
-                settings.value("outputWindow-pos").toPoint());
-            g_ThisVF->processText_->setPlainText(
-                settings.value("processText-contents").toString());
-        }
     }
     settings.endGroup();
 }
