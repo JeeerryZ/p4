@@ -34,7 +34,6 @@ class QP4AboutDlg : public QDialog
     QPushButton *btn_settings_;
 
     QBoxLayout *mainLayout_;
-    QPixmap p4image_;
 
   public:
     QP4AboutDlg(QWidget *parent = 0, Qt::WindowFlags f = {});

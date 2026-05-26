@@ -274,7 +274,7 @@ bool QIntParamsDlg::readFloatField(QLineEdit *edt, double *presult,
         return true;
     }
 
-    x = QString("%g").arg((float)(*presult));
+    x = QString::number(*presult, 'g');
     if (x != t)
         edt->setText(x);
 
@@ -371,19 +371,19 @@ void QIntParamsDlg::updateDlgData(void)
     else
         btn_dots_->toggle();
 
-    buf = QString("%g").arg((float)(g_VFResults.config_step_));
+    buf = QString::number(g_VFResults.config_step_, 'g');
     edt_stepsize_->setText(buf);
 
-    buf = QString("%g").arg((float)(g_VFResults.config_currentstep_));
+    buf = QString::number(g_VFResults.config_currentstep_, 'g');
     lbl_curstep_->setText(buf);
 
-    buf = QString("%g").arg((float)(g_VFResults.config_hmi_));
+    buf = QString::number(g_VFResults.config_hmi_, 'g');
     edt_minstep_->setText(buf);
 
-    buf = QString("%g").arg((float)(g_VFResults.config_hma_));
+    buf = QString::number(g_VFResults.config_hma_, 'g');
     edt_maxstep_->setText(buf);
 
-    buf = QString("%g").arg((float)(g_VFResults.config_tolerance_));
+    buf = QString::number(g_VFResults.config_tolerance_, 'g');
     edt_tolerance_->setText(buf);
 
     spin_numpoints_->setValue(g_VFResults.config_intpoints_);
@@ -401,7 +401,7 @@ void QIntParamsDlg::updateDlgData(void)
 void QIntParamsDlg::setCurrentStep(double curstep)
 {
     QString buf;
-    buf = QString("%g").arg((float)curstep);
+    buf = QString::number(curstep, 'g');
     lbl_curstep_->setText(buf);
 }
 

@@ -64,6 +64,7 @@ class QFindDlg : public QWidget
     QPushButton *btn_terminate_;
     QProgressBar *progressBar_;
     QTextEdit *logArea_;
+    QPushButton *btn_toggleLog_;
     QPushButton *btn_clearLog_;
     QPushButton *btn_copyLog_;
 
@@ -84,6 +85,7 @@ class QFindDlg : public QWidget
     void onBtnLoad();
     void onBtnSave();
     void onBtnEval();
+    void onToggleLog();
 
     void onSaveSignal();
 };

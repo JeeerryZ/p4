@@ -53,10 +53,10 @@ static void ps_print_saddle(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f box\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f box\n").arg(printColorTable(CSADDLE)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n", printColorTable(CSADDLE), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -66,10 +66,10 @@ static void ps_print_stablenode(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f box\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f box\n").arg(printColorTable(CNODE_S)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n", printColorTable(CNODE_S), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -79,10 +79,10 @@ static void ps_print_unstablenode(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f box\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f box\n").arg(printColorTable(CNODE_U)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f box\n", printColorTable(CNODE_U), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -92,10 +92,10 @@ static void ps_print_stableweakfocus(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CWEAK_FOCUS_S)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CWEAK_FOCUS_S), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -105,10 +105,10 @@ static void ps_print_unstableweakfocus(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CWEAK_FOCUS_U)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CWEAK_FOCUS_U), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -118,10 +118,10 @@ static void ps_print_weakfocus(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CWEAK_FOCUS)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CWEAK_FOCUS), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -131,10 +131,10 @@ static void ps_print_center(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CCENTER)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CCENTER), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -144,10 +144,10 @@ static void ps_print_stablestrongfocus(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CSTRONG_FOCUS_S)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CSTRONG_FOCUS_S), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -157,10 +157,10 @@ static void ps_print_unstablestrongfocus(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f diamond\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f diamond\n").arg(printColorTable(CSTRONG_FOCUS_U)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f diamond\n", printColorTable(CSTRONG_FOCUS_U), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -170,10 +170,10 @@ static void ps_print_sesaddle(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f triangle\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f triangle\n").arg(printColorTable(CSADDLE)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n", printColorTable(CSADDLE), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -183,10 +183,10 @@ static void ps_print_sesaddlenode(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f triangle\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f triangle\n").arg(printColorTable(CSADDLE_NODE)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n", printColorTable(CSADDLE_NODE), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -196,10 +196,10 @@ static void ps_print_sestablenode(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f triangle\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f triangle\n").arg(printColorTable(CNODE_S)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n", printColorTable(CNODE_S), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -209,10 +209,10 @@ static void ps_print_seunstablenode(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f triangle\n").arg(
-                      printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n",
+                      printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         else
-            s = QString("col%d %f %f triangle\n").arg(printColorTable(CNODE_U)).arg((float)x).arg((float)y);
+            s = QString::asprintf("col%d %f %f triangle\n", printColorTable(CNODE_U), (float)x, (float)y);
         s_PSFileStream << s;
     }
 }
@@ -222,14 +222,14 @@ static void ps_print_degen(double x, double y)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint) {
-            s = QString("LW 2.6 mul setlinewidth\n"
+            s = QString::asprintf("LW 2.6 mul setlinewidth\n"
                       "col%d %f %f cross\n"
-                      "LW setlinewidth\n").arg(printColorTable(bgColours::CFOREGROUND)).arg((float)x).arg((float)y);
+                      "LW setlinewidth\n", printColorTable(bgColours::CFOREGROUND), (float)x, (float)y);
         } else {
             if (s_PSBlackWhitePrint) {
-                s = QString("LW 2.6 mul setlinewidth\n"
+                s = QString::asprintf("LW 2.6 mul setlinewidth\n"
                       "col%d %f %f cross\n"
-                      "LW setlinewidth\n").arg(printColorTable(CDEGEN)).arg((float)x).arg((float)y);
+                      "LW setlinewidth\n", printColorTable(CDEGEN), (float)x, (float)y);
             }
             s_PSFileStream << s;
         }
@@ -250,20 +250,20 @@ static void ps_print_elips(double x0, double y0, double a, double b, int color,
             s_PSFileStream << "gsave\n";
 
         if (s_PSBlackWhitePrint)
-            s = QString("col%d\n").arg(printColorTable(bgColours::CFOREGROUND));
+            s = QString::asprintf("col%d\n", printColorTable(bgColours::CFOREGROUND));
         else
-            s = QString("col%d\n").arg(printColorTable(color));
+            s = QString::asprintf("col%d\n", printColorTable(color));
 
         s_PSFileStream << s;
         s_PSFileStream << "newpath\n";
 
         if (x0-a>=0 && x0+a<s_PSW && y0-b>=0 && y0+b<s_PSH) {
             // full elipse visible
-            s = QString("%f %f moveto\n").arg((float)(x0 + a)).arg((float)y0);
+            s = QString::asprintf("%f %f moveto\n", (float)(x0 + a), (float)y0);
             s_PSFileStream << s;
             h = PI / 100;
             for (t = h; t < TWOPI; t += h) {
-                s = QString("%f %f lineto \n").arg((float)(x0 + a * cos(t))).arg((float)(y0 + b * sin(t)));
+                s = QString::asprintf("%f %f lineto \n", (float)(x0 + a * cos(t)), (float)(y0 + b * sin(t)));
                 s_PSFileStream << s;
             }
 
@@ -293,9 +293,9 @@ static void ps_print_line(double x0, double y0, double x1, double y1, int color)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint) {
-            s = QString("%f %f moveto\n%f %f lineto col%d stroke\n").arg((float)x0).arg((float)y0).arg((float)x1).arg((float)y1).arg(printColorTable(bgColours::CFOREGROUND));
+            s = QString::asprintf("%f %f moveto\n%f %f lineto col%d stroke\n", (float)x0, (float)y0, (float)x1, (float)y1, printColorTable(bgColours::CFOREGROUND));
         } else {
-            s = QString("%f %f moveto\n%f %f lineto col%d stroke\n").arg((float)x0).arg((float)y0).arg((float)x1).arg((float)y1).arg(printColorTable(color));
+            s = QString::asprintf("%f %f moveto\n%f %f lineto col%d stroke\n", (float)x0, (float)y0, (float)x1, (float)y1, printColorTable(color));
         }
         s_PSFileStream << s;
     }
@@ -319,9 +319,9 @@ static void ps_print_point(double x0, double y0, int color)
     if (s_PSFile != nullptr) {
         QString s;
         if (s_PSBlackWhitePrint)
-            s = QString("col%d %f %f dot\n").arg(printColorTable(bgColours::CFOREGROUND)).arg((float)x0).arg((float)y0);
+            s = QString::asprintf("col%d %f %f dot\n", printColorTable(bgColours::CFOREGROUND), (float)x0, (float)y0);
         else
-            s = QString("col%d %f %f dot\n").arg(printColorTable(color)).arg((float)x0).arg((float)y0);
+            s = QString::asprintf("col%d %f %f dot\n", printColorTable(color), (float)x0, (float)y0);
         s_PSFileStream << s;
     }
 }
@@ -407,9 +407,9 @@ void preparePostscriptPrinting(int x0, int y0, int w, int h, bool iszoom,
         // measurements
         // (1 point = 1/72 inch)
 
-        s = QString("%%!PS-Adobe-3.0 EPSF-3.0\n"
-                  "%%%%BoundingBox: %d %d %d %d\n")
-                  .arg((int)bbx0).arg((int)bby0).arg((int)bbx1).arg((int)bby1);
+        s = QString::asprintf("%%!PS-Adobe-3.0 EPSF-3.0\n"
+                  "%%%%BoundingBox: %d %d %d %d\n",
+                  (int)bbx0, (int)bby0, (int)bbx1, (int)bby1);
 
         s_PSFileStream << s;
         s_PSFileStream << "%%%%Title: " << title << "\n";
@@ -417,28 +417,28 @@ void preparePostscriptPrinting(int x0, int y0, int w, int h, bool iszoom,
         s_PSFileStream << "%%%%CreationDate: " << datestring << "\n";
         s_PSFileStream << "%%%%EndComments\n\n";
 
-        s = QString("%% User specified resolution = %d DPI\n"
+        s = QString::asprintf("%% User specified resolution = %d DPI\n"
                   "%% User specified Linewidth and symbolwidth, in pixels:\n\n"
                   "/LW %d def\n"
                   "/SW %d def\n\n"
                   "%% Derived dash pattern:\n"
-                  "/DS %d def\n\n").arg(resolution).arg(linewidth).arg(symbolwidth).arg(linewidth * 6);
+                  "/DS %d def\n\n", resolution, linewidth, symbolwidth, linewidth * 6);
         s_PSFileStream << s;
 
-        s = QString("%% Transformation from default 72 DPI to chosen resolution, "
+        s = QString::asprintf("%% Transformation from default 72 DPI to chosen resolution, "
                   "and shift towards center of page:\n"
                   "/scaletransformation{\n"
                   "   %f %f scale\n"
-                  "   %d %d translate}def\n\n")
-                  .arg((float)scalefactor).arg((float)scalefactor).arg(x0).arg(y0);
+                  "   %d %d translate}def\n\n",
+                  (float)scalefactor, (float)scalefactor, x0, y0);
         s_PSFileStream << s;
 
-        s = QString("/frame{\n"
+        s = QString::asprintf("/frame{\n"
                   "   0 setlinewidth\n"
                   "   newpath 0 0 moveto 0 %d lineto %d %d lineto %d 0 lineto "
                   "closepath\n"
-                  "   clip stroke}def\n\n")
-                  .arg(h).arg(w).arg(h).arg(w);
+                  "   clip stroke}def\n\n",
+                  h, w, h, w);
         s_PSFileStream << s;
 
         s_PSFileStream << "%% Color table:\n"
@@ -516,16 +516,16 @@ void preparePostscriptPrinting(int x0, int y0, int w, int h, bool iszoom,
                           "stroke\n"
                           "}bind def\n\n";
 
-        s = QString("%% Main Picture (local coordinates "
+        s = QString::asprintf("%% Main Picture (local coordinates "
                   "(x0,y0,x1,y1)=(0,0,%d,%d):\n"
                   "gsave\n"
                   "scaletransformation\n"
-                  "[] 0 setdash\n")
-                  .arg(w).arg(h);
+                  "[] 0 setdash\n",
+                  w, h);
         s_PSFileStream << s;
 
         if (!bgColours::PRINT_WHITE_BG) {
-          s = QString("%% Fill background with black rectangle:\n"
+          s = QString::asprintf("%% Fill background with black rectangle:\n"
             "newpath\n"
             "0 0 moveto\n"
             "%d 0 lineto\n"
@@ -533,8 +533,8 @@ void preparePostscriptPrinting(int x0, int y0, int w, int h, bool iszoom,
             "0 %d lineto\n"
             "closepath\n"
             "col0\n"
-            "fill\n")
-            .arg(w).arg(w).arg(h).arg(h);
+            "fill\n",
+            w, w, h, h);
           s_PSFileStream << s;
         }
 

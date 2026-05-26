@@ -218,10 +218,8 @@ int find_critical_point(QWinSphere *spherewnd, double x, double y)
         change_epsilon = change_epsilon_saddle;
 
         if (g_VFResults.selected_saddle_point_->chart == CHART_R2) {
-            sx = QString("x = %f").arg(
-                       (float)(g_VFResults.selected_saddle_point_->x0));
-            sy = QString("y = %f").arg(
-                       (float)(g_VFResults.selected_saddle_point_->y0));
+            sx = QString::asprintf("x = %f", (float)(g_VFResults.selected_saddle_point_->x0));
+            sy = QString::asprintf("y = %f", (float)(g_VFResults.selected_saddle_point_->y0));
             sz = "";
         } else {
             switch (g_VFResults.selected_saddle_point_->chart) {
@@ -244,12 +242,12 @@ int find_critical_point(QWinSphere *spherewnd, double x, double y)
             }
 
             if (g_VFResults.plweights_ == false) {
-                sx = QString("X= %f").arg(pcoord[0]);
-                sy = QString("Y= %f").arg(pcoord[1]);
+                sx = QString::asprintf("X= %f", pcoord[0]);
+                sy = QString::asprintf("Y= %f", pcoord[1]);
                 sz = QString("Z= 0");
             } else {
-                sx = QString("r= %f").arg(pcoord[1]);
-                sy = QString("theta= %f").arg(pcoord[2]);
+                sx = QString::asprintf("r= %f", pcoord[1]);
+                sy = QString::asprintf("theta= %f", pcoord[2]);
                 sz = "";
             }
         }
@@ -274,8 +272,8 @@ int find_critical_point(QWinSphere *spherewnd, double x, double y)
         epsilon = g_VFResults.selected_se_point_->epsilon;
         change_epsilon = change_epsilon_se;
         if (g_VFResults.selected_se_point_->chart == CHART_R2) {
-            sx = QString("x=%f").arg((float)(g_VFResults.selected_se_point_->x0));
-            sy = QString("y=%f").arg((float)(g_VFResults.selected_se_point_->y0));
+            sx = QString::asprintf("x=%f", (float)(g_VFResults.selected_se_point_->x0));
+            sy = QString::asprintf("y=%f", (float)(g_VFResults.selected_se_point_->y0));
             sz = QString("");
         } else {
             switch (g_VFResults.selected_se_point_->chart) {
@@ -297,12 +295,12 @@ int find_critical_point(QWinSphere *spherewnd, double x, double y)
                 break;
             }
             if (g_VFResults.plweights_ == false) {
-                sx = QString("X= %f").arg(pcoord[0]);
-                sy = QString("Y= %f").arg(pcoord[1]);
+                sx = QString::asprintf("X= %f", pcoord[0]);
+                sy = QString::asprintf("Y= %f", pcoord[1]);
                 sz = QString("Z= 0");
             } else {
-                sx = QString("r= %f").arg(pcoord[1]);
-                sy = QString("theta= %f").arg(pcoord[2]);
+                sx = QString::asprintf("r= %f", pcoord[1]);
+                sy = QString::asprintf("theta= %f", pcoord[2]);
                 sz = QString("");
             }
         }
@@ -325,8 +323,8 @@ int find_critical_point(QWinSphere *spherewnd, double x, double y)
         epsilon = g_VFResults.selected_de_point_->epsilon;
         change_epsilon = change_epsilon_de;
         if (g_VFResults.selected_de_point_->chart == CHART_R2) {
-            sx = QString("x=%f").arg(g_VFResults.selected_de_point_->x0);
-            sy = QString("y=%f").arg(g_VFResults.selected_de_point_->y0);
+            sx = QString::asprintf("x=%f", g_VFResults.selected_de_point_->x0);
+            sy = QString::asprintf("y=%f", g_VFResults.selected_de_point_->y0);
             sz = "";
         } else {
             switch (g_VFResults.selected_de_point_->chart) {

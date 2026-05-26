@@ -102,12 +102,15 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     logArea_->setReadOnly(true);
     logArea_->setFont(QFont("Courier", 8));
     logArea_->setMinimumHeight(80);
+    logArea_->setMaximumHeight(200);
+    logArea_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     logArea_->hide();
 
     btn_terminate_ = new QPushButton("Terminate", this);
     btn_terminate_->setToolTip("Terminate the running Maple process");
     btn_terminate_->hide();
 
+    btn_toggleLog_ = new QPushButton("▶ Maple Log", this);
     btn_clearLog_ = new QPushButton("Clear", this);
     btn_clearLog_->hide();
     btn_copyLog_ = new QPushButton("Copy", this);
@@ -188,13 +191,6 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     mainLayout_->addLayout(layout0);
     mainLayout_->addLayout(layout1);
     mainLayout_->addWidget(progressBar_);
-
-    QHBoxLayout *logBtnLayout = new QHBoxLayout();
-    logBtnLayout->addWidget(btn_clearLog_);
-    logBtnLayout->addWidget(btn_copyLog_);
-    logBtnLayout->addStretch(0);
-    mainLayout_->addLayout(logBtnLayout);
-    mainLayout_->addWidget(logArea_);
 
     //   mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -320,8 +316,8 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     });
     connect(btn_inf_, &QRadioButton::toggled, this, [=](bool on) {
         if (on) {
-            if (g_ThisVF->typeofstudy_ != TYPEOFSTUDY_FIN) {
-                g_ThisVF->typeofstudy_ = TYPEOFSTUDY_FIN;
+            if (g_ThisVF->typeofstudy_ != TYPEOFSTUDY_INF) {
+                g_ThisVF->typeofstudy_ = TYPEOFSTUDY_INF;
                 if (g_ThisVF->changed_ == false) {
                     g_ThisVF->changed_ = true;
                     g_p4app->signalChanged();
@@ -348,6 +344,7 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     connect(btn_save_, &QPushButton::clicked, this, &QFindDlg::onBtnSave);
     connect(btn_eval_, &QPushButton::clicked, this, &QFindDlg::onBtnEval);
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QFindDlg::onSaveSignal);
+    connect(btn_toggleLog_, &QPushButton::clicked, this, &QFindDlg::onToggleLog);
     connect(btn_clearLog_, &QPushButton::clicked, logArea_, &QTextEdit::clear);
     connect(btn_copyLog_, &QPushButton::clicked, this, [=]() {
         logArea_->selectAll();
@@ -377,7 +374,20 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     if (paramsWindow_ == nullptr) {
         paramsWindow_ = new QParamsDlg(this);
         paramsWindow_->show();
-        superLayout_->addWidget(paramsWindow_, 0, Qt::AlignTop);
+
+        QVBoxLayout *rightLayout = new QVBoxLayout();
+        rightLayout->addWidget(paramsWindow_, 0, Qt::AlignTop);
+        rightLayout->addSpacing(8);
+        rightLayout->addWidget(btn_toggleLog_);
+
+        QHBoxLayout *logBtnLayout = new QHBoxLayout();
+        logBtnLayout->addWidget(btn_clearLog_);
+        logBtnLayout->addWidget(btn_copyLog_);
+        logBtnLayout->addStretch(0);
+        rightLayout->addLayout(logBtnLayout);
+        rightLayout->addWidget(logArea_);
+        rightLayout->addStretch(1);
+        superLayout_->addLayout(rightLayout);
 
     } else {
         delete paramsWindow_;
@@ -548,9 +558,13 @@ void QFindDlg::signalEvaluating()
     btn_terminate_->show();
     progressBar_->show();
     logArea_->clear();
-    logArea_->show();
-    btn_clearLog_->show();
-    btn_copyLog_->show();
+    // Auto-expand log when evaluation starts
+    if (!logArea_->isVisible()) {
+        logArea_->show();
+        btn_clearLog_->show();
+        btn_copyLog_->show();
+        btn_toggleLog_->setText("▼ Maple Log");
+    }
 }
 
 void QFindDlg::signalEvaluated()
@@ -558,4 +572,13 @@ void QFindDlg::signalEvaluated()
     btn_eval_->setEnabled(true);
     btn_terminate_->hide();
     progressBar_->hide();
+}
+
+void QFindDlg::onToggleLog()
+{
+    bool expanded = logArea_->isVisible();
+    logArea_->setVisible(!expanded);
+    btn_clearLog_->setVisible(!expanded);
+    btn_copyLog_->setVisible(!expanded);
+    btn_toggleLog_->setText(expanded ? "▶ Maple Log" : "▼ Maple Log");
 }

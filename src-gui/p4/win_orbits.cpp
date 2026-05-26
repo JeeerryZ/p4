@@ -89,7 +89,6 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(layout1);
     mainLayout_->addLayout(layout2);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
     // connections
@@ -135,8 +134,8 @@ void QOrbitsDlg::setInitialPoint(double x, double y)
     selected_x0_ = x;
     selected_y0_ = y;
 
-    bufx = QString("%g").arg((float)x);
-    bufy = QString("%g").arg((float)y);
+    bufx = QString::number(x, 'g');
+    bufy = QString::number(y, 'g');
 
     edt_x0_->setText(bufx);
     edt_y0_->setText(bufy);

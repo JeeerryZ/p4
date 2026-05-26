@@ -170,11 +170,11 @@ QPrintDlg::QPrintDlg(QWidget *parent, Qt::WindowFlags f) : QDialog(parent, f)
     setLayout(mainLayout_);
 
     QString s;
-    s = QString("%g").arg((float)sm_LastLineWidth);
+    s = QString::number(sm_LastLineWidth, 'g');
     edt_linewidth_->setText(s);
-    s = QString("%g").arg((float)sm_LastSymbolSize);
+    s = QString::number(sm_LastSymbolSize, 'g');
     edt_symbolsize_->setText(s);
-    s = QString("%d").arg(sm_LastResolution);
+    s = QString::number(sm_LastResolution);
     edt_resolution_->setText(s);
 
     setP4WindowTitle(this, "Print Phase Portrait");
@@ -278,7 +278,7 @@ bool QPrintDlg::readFloatField(QLineEdit *edt, double *presult, double defvalue,
         return true;
     }
 
-    x = QString("%g").arg((float)*presult);
+    x = QString::number(*presult, 'g');
     if (x != t)
         edt->setText(x);
 

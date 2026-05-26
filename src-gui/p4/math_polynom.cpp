@@ -195,12 +195,12 @@ const char *dumpPoly1(P4POLYNOM1 f, const char *x)
 
         if ((c != 1 && c != -1) || cx == 0) {
             if (s.length() == 0) {
-                t = QString("%g").arg(c);
+                t = QString::asprintf("%g", c);
             } else {
                 if (c >= 0)
-                    t = QString(" + %g").arg(c);
+                    t = QString::asprintf(" + %g", c);
                 else
-                    t = QString(" - %g").arg(-c);
+                    t = QString::asprintf(" - %g", -c);
             }
             s += t;
         } else {
@@ -256,12 +256,12 @@ const char *dumpPoly2(P4POLYNOM2 f, const char *x, const char *y)
 
         if ((c != 1 && c != -1) || (cx == 0 && cy == 0)) {
             if (s.length() == 0) {
-                t = QString("%g").arg(c);
+                t = QString::asprintf("%g", c);
             } else {
                 if (c >= 0)
-                    t = QString(" + %g").arg(c);
+                    t = QString::asprintf(" + %g", c);
                 else
-                    t = QString(" - %g").arg(-c);
+                    t = QString::asprintf(" - %g", -c);
             }
             s += t;
         } else {
@@ -324,12 +324,12 @@ const char *dumpPoly3(P4POLYNOM3 f, const char *x, const char *y, const char *z)
 
         if ((c != 1 && c != -1) || (cx == 0 && cy == 0 && cz == 0)) {
             if (s.length() == 0) {
-                t = QString("%g").arg(c);
+                t = QString::asprintf("%g", c);
             } else {
                 if (c >= 0)
-                    t = QString(" + %g").arg(c);
+                    t = QString::asprintf(" + %g", c);
                 else
-                    t = QString(" - %g").arg(-c);
+                    t = QString::asprintf(" - %g", -c);
             }
             s += t;
         } else {
