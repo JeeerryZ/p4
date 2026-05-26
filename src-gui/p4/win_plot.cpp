@@ -35,8 +35,12 @@
 #include "win_separatrice.h"
 #include "win_zoom.h"
 
+#include <QDockWidget>
+#include <QMenu>
+#include <QMenuBar>
 #include <QPrintDialog>
 #include <QSettings>
+#include <QTabWidget>
 #include <QToolBar>
 
 QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
@@ -69,54 +73,54 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     toolBar2->setMovable(false);
 
     actClose_ = new QAction("Clos&e", this);
-    actClose_->setShortcut(Qt::ALT + Qt::Key_E);
+    actClose_->setShortcut(Qt::ALT | Qt::Key_E);
     connect(actClose_, &QAction::triggered, this, &QPlotWnd::onBtnClose);
     toolBar1->addAction(actClose_);
 
     actRefresh_ = new QAction("&Refresh", this);
-    actRefresh_->setShortcut(Qt::ALT + Qt::Key_R);
+    actRefresh_->setShortcut(Qt::ALT | Qt::Key_R);
     connect(actRefresh_, &QAction::triggered, this, &QPlotWnd::onBtnRefresh);
     toolBar1->addAction(actRefresh_);
 
     actLegend_ = new QAction("&Legend", this);
-    actLegend_->setShortcut(Qt::ALT + Qt::Key_L);
+    actLegend_->setShortcut(Qt::ALT | Qt::Key_L);
     connect(actLegend_, &QAction::triggered, this, &QPlotWnd::onBtnLegend);
     toolBar1->addAction(actLegend_);
 
     actOrbits_ = new QAction("&Orbits", this);
-    actOrbits_->setShortcut(Qt::ALT + Qt::Key_O);
+    actOrbits_->setShortcut(Qt::ALT | Qt::Key_O);
     connect(actOrbits_, &QAction::triggered, this, &QPlotWnd::onBtnOrbits);
     toolBar1->addAction(actOrbits_);
 
     actIntParams_ = new QAction("&Integration Parameters", this);
-    actIntParams_->setShortcut(Qt::ALT + Qt::Key_I);
+    actIntParams_->setShortcut(Qt::ALT | Qt::Key_I);
     connect(actIntParams_, &QAction::triggered, this,
             &QPlotWnd::onBtnIntParams);
     toolBar1->addAction(actIntParams_);
 
     actGCF_ = new QAction("&GCF", this);
-    actGCF_->setShortcut(Qt::ALT + Qt::Key_G);
+    actGCF_->setShortcut(Qt::ALT | Qt::Key_G);
     connect(actGCF_, &QAction::triggered, this, &QPlotWnd::onBtnGCF);
     toolBar1->addAction(actGCF_);
 
     actCurve_ = new QAction("&Curves", this);
-    actCurve_->setShortcut(Qt::ALT + Qt::Key_C);
+    actCurve_->setShortcut(Qt::ALT | Qt::Key_C);
     connect(actCurve_, &QAction::triggered, this, &QPlotWnd::onBtnCurve);
     toolBar1->addAction(actCurve_);
 
     actPlotSep_ = new QAction("Plot &Separatrice", this);
-    actPlotSep_->setShortcut(Qt::ALT + Qt::Key_S);
+    actPlotSep_->setShortcut(Qt::ALT | Qt::Key_S);
     connect(actPlotSep_, &QAction::triggered, this, &QPlotWnd::onBtnPlotSep);
     toolBar2->addAction(actPlotSep_);
 
     actPlotAllSeps_ = new QAction("Plot All Separa&trices", this);
-    actPlotAllSeps_->setShortcut(Qt::ALT + Qt::Key_T);
+    actPlotAllSeps_->setShortcut(Qt::ALT | Qt::Key_T);
     connect(actPlotAllSeps_, &QAction::triggered, this,
             &QPlotWnd::onBtnPlotAllSeps);
     toolBar2->addAction(actPlotAllSeps_);
 
     actLimitCycles_ = new QAction("Limit C&ycles", this);
-    actLimitCycles_->setShortcut(Qt::ALT + Qt::Key_Y);
+    actLimitCycles_->setShortcut(Qt::ALT | Qt::Key_Y);
     connect(actLimitCycles_, &QAction::triggered, this,
             &QPlotWnd::onBtnLimitCycles);
     toolBar2->addAction(actLimitCycles_);
@@ -127,18 +131,29 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     toolBar2->addAction(actIsoclines_);
 
     actView_ = new QAction("&View", this);
-    actView_->setShortcut(Qt::ALT + Qt::Key_V);
+    actView_->setShortcut(Qt::ALT | Qt::Key_V);
     connect(actView_, &QAction::triggered, this, &QPlotWnd::onBtnView);
     toolBar2->addAction(actView_);
 
     actPrint_ = new QAction("&Print", this);
-    actPrint_->setShortcut(Qt::ALT + Qt::Key_P);
+    actPrint_->setShortcut(Qt::ALT | Qt::Key_P);
     connect(actPrint_, &QAction::triggered, this, &QPlotWnd::onBtnPrint);
     toolBar2->addAction(actPrint_);
 
     addToolBar(Qt::TopToolBarArea, toolBar1);
     addToolBarBreak(Qt::TopToolBarArea);
     addToolBar(Qt::TopToolBarArea, toolBar2);
+
+    undoStack_ = new QUndoStack(this);
+    undoStack_->setUndoLimit(50);
+
+    QMenu *editMenu = menuBar()->addMenu("&Edit");
+    QAction *actUndo = undoStack_->createUndoAction(this, "&Undo");
+    actUndo->setShortcut(QKeySequence::Undo);
+    QAction *actRedo = undoStack_->createRedoAction(this, "&Redo");
+    actRedo->setShortcut(QKeySequence::Redo);
+    editMenu->addAction(actUndo);
+    editMenu->addAction(actRedo);
 
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QPlotWnd::onSaveSignal);
     connect(g_ThisVF, &QInputVF::loadSignal, this, &QPlotWnd::onLoadSignal);
@@ -165,9 +180,13 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     actPrint_->setToolTip("Opens the print window");
 #endif
 
+    coordLabel_ = new QLabel(this);
+    coordLabel_->setMinimumWidth(280);
+    statusBar()->addPermanentWidget(coordLabel_);
     statusBar()->showMessage("Ready");
 
     sphere_ = new QWinSphere(this, statusBar(), false, 0, 0, 0, 0);
+    connect(sphere_, &QWinSphere::coordsChanged, coordLabel_, &QLabel::setText);
     legendWindow_ = new QLegendWnd();
     orbitsWindow_ = new QOrbitsDlg(this, sphere_);
     sepWindow_ = new QSepDlg(this, sphere_);
@@ -178,6 +197,34 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     curveWindow_ = new QCurveDlg(this, sphere_);
     isoclinesWindow_ = new QIsoclinesDlg(this, sphere_);
     g_LCWindowIsUp = false; // Limit cycles: initially hidden
+
+    connect(undoStack_, &QUndoStack::indexChanged, this, [=](int) {
+        orbitsWindow_->reset();
+        sphere_->update();
+    });
+
+    // Dock panel — embed all plot-control dialogs into a tabbed side panel
+    auto makeTab = [](QWidget *w, QTabWidget *tabs, const QString &label) {
+        w->setWindowFlags(Qt::Widget);
+        tabs->addTab(w, label);
+    };
+    controlTabs_ = new QTabWidget(this);
+    makeTab(orbitsWindow_,    controlTabs_, "Orbits");
+    makeTab(sepWindow_,       controlTabs_, "Separatrices");
+    makeTab(gcfWindow_,       controlTabs_, "GCF");
+    makeTab(curveWindow_,     controlTabs_, "Curves");
+    makeTab(isoclinesWindow_, controlTabs_, "Isoclines");
+    makeTab(lcWindow_,        controlTabs_, "Limit Cycles");
+    makeTab(intParamsWindow_, controlTabs_, "Int. Params");
+    makeTab(viewParamsWindow_, controlTabs_, "View");
+
+    controlDock_ = new QDockWidget("Controls", this);
+    controlDock_->setObjectName("ControlDock");
+    controlDock_->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+    controlDock_->setFeatures(QDockWidget::DockWidgetClosable |
+                               QDockWidget::DockWidgetMovable);
+    controlDock_->setWidget(controlTabs_);
+    addDockWidget(Qt::RightDockWidgetArea, controlDock_);
 
     sphere_->show();
     setCentralWidget(sphere_);
@@ -334,45 +381,45 @@ void QPlotWnd::onBtnLegend(void)
 
 void QPlotWnd::onBtnOrbits(void)
 {
-    orbitsWindow_->show();
-    orbitsWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(orbitsWindow_);
 }
 
 void QPlotWnd::onBtnIntParams(void)
 {
-    intParamsWindow_->show();
-    intParamsWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(intParamsWindow_);
 }
 
 void QPlotWnd::onBtnView(void)
 {
-    viewParamsWindow_->show();
-    viewParamsWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(viewParamsWindow_);
 }
 
 void QPlotWnd::onBtnGCF(void)
 {
-    gcfWindow_->show();
-    gcfWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(gcfWindow_);
 }
 
 void QPlotWnd::onBtnCurve(void)
 {
-    curveWindow_->show();
-    curveWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(curveWindow_);
 }
 
 void QPlotWnd::onBtnIsoclines(void)
 {
-    isoclinesWindow_->show();
-    isoclinesWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(isoclinesWindow_);
 }
 
 void QPlotWnd::onBtnPlotSep(void)
 {
     getDlgData();
-    sepWindow_->show();
-    sepWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(sepWindow_);
 }
 
 void QPlotWnd::onBtnPlotAllSeps(void)
@@ -386,8 +433,8 @@ void QPlotWnd::onBtnPlotAllSeps(void)
 
 void QPlotWnd::onBtnLimitCycles(void)
 {
-    lcWindow_->show();
-    lcWindow_->raise();
+    controlDock_->show();
+    controlTabs_->setCurrentWidget(lcWindow_);
 }
 
 void QPlotWnd::onBtnPrint(void)

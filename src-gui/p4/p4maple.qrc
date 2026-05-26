@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/maple">
+        <file alias="blowup.m">../../src-mpl/blowup.m</file>
+        <file alias="gcd.m">../../src-mpl/gcd.m</file>
+        <file alias="infinity.m">../../src-mpl/infinity.m</file>
+        <file alias="main.m">../../src-mpl/main.m</file>
+        <file alias="num_coeff.m">../../src-mpl/num_coeff.m</file>
+        <file alias="p4.m">../../src-mpl/p4.m</file>
+        <file alias="p4gcf.m">../../src-mpl/p4gcf.m</file>
+        <file alias="realroot.m">../../src-mpl/realroot.m</file>
+        <file alias="tools.m">../../src-mpl/tools.m</file>
+        <file alias="type.m">../../src-mpl/type.m</file>
+        <file alias="weakfocus.m">../../src-mpl/weakfocus.m</file>
+        <file alias="writelog.m">../../src-mpl/writelog.m</file>
+    </qresource>
+</RCC>

@@ -23,7 +23,7 @@
 include(../../P4.pri)
 DESTDIR = $$BUILD_DIR/lyapunov/
 
-CONFIG +=  console c++11
+CONFIG +=  console c++17
 macx: CONFIG -= app_bundle
 SOURCES =  lyapunov.cpp lypcoeff.cpp polynom.cpp \
            checktbl.cpp createtbl.cpp readvf.cpp

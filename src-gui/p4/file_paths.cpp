@@ -135,11 +135,7 @@ QString getDefaultP4SumTablePath(void)
     if (f.isNull() == false) {
         g = f;
         g += QDir::separator();
-#ifdef Q_OS_X11
         g += "sumtables";
-#else
-        g += "sumtables";
-#endif
     }
 
     return g;
@@ -498,21 +494,20 @@ QByteArray Win_GetShortPathName(QByteArray f)
     DWORD siz, reqsiz;
 
     longfname = (const char *)f;
-    shortfname = new char[siz = ba_fname.length() + 1];
-
-    // call to Windows API
-
+    // First call with a 1-byte buffer probes the required size (Windows pattern).
+    shortfname = new char[siz = 1];
     reqsiz = GetShortPathNameA(longfname, shortfname, siz);
     if (reqsiz > siz) {
+        delete[] shortfname;
         shortfname = new char[reqsiz];
         reqsiz = GetShortPathNameA(longfname, shortfname, reqsiz);
     }
     if (reqsiz == 0) {
-        delete shortfname;
+        delete[] shortfname;
         shortfname = nullptr;
     } else {
         f = QByteArray(shortfname);
-        delete shortfname;
+        delete[] shortfname;
         shortfname = nullptr;
     }
     return f;

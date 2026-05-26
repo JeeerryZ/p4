@@ -63,6 +63,8 @@ win32 {
         GMP_PREFIX = C:/Qt/Tools/mingw64
     } else:exists(D:/Qt/Tools/mingw64/include/gmp.h) {
         GMP_PREFIX = D:/Qt/Tools/mingw64
+    } else:exists(E:/Qt/Tools/mingw64/include/gmp.h) {
+        GMP_PREFIX = E:/Qt/Tools/mingw64
     } else {
         warning("GMP not found. Install via MSYS2: pacman -S mingw-w64-x86_64-gmp mingw-w64-x86_64-mpfr")
         GMP_PREFIX =

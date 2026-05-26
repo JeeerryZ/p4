@@ -138,11 +138,16 @@ int main(int argc, char *argv[])
     g_p4app->addLibraryPath(g_p4app->applicationDirPath());
 
     g_p4app->setQuitOnLastWindowClosed(false);
+
+    // Extract bundled Maple scripts to a writable location before any
+    // evaluation can happen.  No-op if already up-to-date for this version.
+    extractMapleScripts();
+
     v = readP4Settings();
 
     g_p4printer = new QPrinter(QPrinter::PrinterResolution);
     g_p4smallicon = new QPixmap();
-    if (g_p4smallicon->load(getP4BinPath() + "/p4smallicon.png") == false) {
+    if (!g_p4smallicon->load(":/help/p4smallicon.png")) {
         delete g_p4smallicon;
         g_p4smallicon = nullptr;
     }

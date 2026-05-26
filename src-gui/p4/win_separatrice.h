@@ -65,6 +65,7 @@ class QSepDlg : public QWidget
     void setInitialPoint(void);
     void sepEvent(int);
     void onepsilon_enter(void);
+    void onEpsilonChanged(const QString &);
     void markBad(QLineEdit *);
 };
 

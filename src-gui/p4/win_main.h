@@ -28,6 +28,7 @@
 #include <QPalette>
 #include <QPushButton>
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 #define TYPE_SIGNAL_EVALUATING (QEvent::User + 1)
@@ -90,6 +91,7 @@ class QStartDlg : public QWidget
     QWidget *showText(QWidget *win, QString caption, QString fname);
     void onSaveSignal();
     void onLoadSignal();
+    void onRecentFile();
 
   private:
     QBoxLayout *mainLayout_;
@@ -102,6 +104,10 @@ class QStartDlg : public QWidget
     QPushButton *btn_browse_;
     QLineEdit *edt_name_;
     QMenu *viewMenu_;
+    QMenu *recentMenu_;
+
+    void addToRecentFiles(const QString &path);
+    void updateRecentFilesMenu();
 
     QWidget *helpWindow_;
     QWidget *viewInfiniteWindow_;

@@ -25,7 +25,9 @@
 #include "math_polynom.h"
 
 #include <QButtonGroup>
+#include <QLabel>
 #include <QMessageBox>
+#include <QSpinBox>
 
 QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint), mainSphere_(sp),
@@ -41,42 +43,34 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     btngrp->addButton(btn_dashes_);
     QLabel *lbl1 = new QLabel("Appearance: ", this);
 
-    edt_points_ = new QLineEdit("", this);
+    edt_points_ = new QSpinBox(this);
+    edt_points_->setRange(MIN_CURVEPOINTS, MAX_CURVEPOINTS);
     QLabel *lbl2 = new QLabel("Num. Points: ", this);
 
-    edt_precis_ = new QLineEdit("", this);
+    edt_precis_ = new QSpinBox(this);
+    edt_precis_->setRange(MIN_CURVEPRECIS, MAX_CURVEPRECIS);
     QLabel *lbl3 = new QLabel("Precision: ", this);
 
-    edt_memory_ = new QLineEdit("", this);
+    edt_memory_ = new QSpinBox(this);
+    edt_memory_->setRange(MIN_CURVEMEMORY, MAX_CURVEMEMORY);
     QLabel *lbl4 = new QLabel("Max. Memory: ", this);
 
     btnEvaluate_ = new QPushButton("Evaluate", this);
     btnPlot_ = new QPushButton("&Plot", this);
     btnDelLast_ = new QPushButton("&Delete Last Curve", this);
     btnDelAll_ = new QPushButton("Delete &All Curves", this);
+    btnDefaults_ = new QPushButton("Defaults", this);
 
 #ifdef TOOLTIPS
     btn_dots_->setToolTip("Plot individual points of the curve");
     btn_dashes_->setToolTip(
         "Connect points of the curve with small line segments");
-    edt_points_->setToolTip("Number of points");
-    btnEvaluate_->setToolTip("Evaluate singular points of plynomial curve");
+    btnEvaluate_->setToolTip("Evaluate singular points of polynomial curve");
     btnPlot_->setToolTip("Plot curve (using symbolic manipulator)");
     btnDelAll_->setToolTip("Delete all curves");
-    QString ttip;
-    ttip = QString::fromStdString("Number of points. Must be between " +
-                                  std::to_string(MIN_CURVEPOINTS) + " and " +
-                                  std::to_string(MAX_CURVEPOINTS));
-    edt_points_->setToolTip(ttip);
-    ttip = QString::fromStdString("Required precision. Must be between " +
-                                  std::to_string(MIN_CURVEPRECIS) + " and " +
-                                  std::to_string(MAX_CURVEPRECIS));
-    edt_precis_->setToolTip(ttip);
-    ttip = QString::fromStdString("Maximum amount of memory (in kilobytes) "
-                                  "spent on plotting GCF.\nMust be between " +
-                                  std::to_string(MIN_CURVEMEMORY) + " and " +
-                                  std::to_string(MAX_CURVEMEMORY));
-    edt_memory_->setToolTip(ttip);
+    edt_points_->setToolTip("Number of sample points");
+    edt_precis_->setToolTip("Required precision (digits)");
+    edt_memory_->setToolTip("Maximum memory budget (kilobytes)");
 #endif
 
     // layout
@@ -107,10 +101,16 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     layout3->addStretch(0);
     layout3->addWidget(btnDelAll_);
 
+    QHBoxLayout *layout4 = new QHBoxLayout();
+    layout4->addStretch(1);
+    layout4->addWidget(btnDefaults_);
+    layout4->addStretch(1);
+
     mainLayout_->addLayout(layout0);
     mainLayout_->addLayout(layout1);
     mainLayout_->addLayout(layout2);
     mainLayout_->addLayout(layout3);
+    mainLayout_->addLayout(layout4);
 
     mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
@@ -122,34 +122,22 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     connect(btnPlot_, &QPushButton::clicked, this, &QCurveDlg::onBtnPlot);
     connect(btnDelLast_, &QPushButton::clicked, this, &QCurveDlg::onBtnDelLast);
     connect(btnDelAll_, &QPushButton::clicked, this, &QCurveDlg::onBtnDelAll);
+    connect(btnDefaults_, &QPushButton::clicked, this,
+            &QCurveDlg::onBtnDefaults);
 
     // finishing
 
-    btnEvaluate_->setEnabled(true);
-    btnPlot_->setEnabled(false);
-
-    if (g_VFResults.curve_vector_.empty()) {
-        btnDelAll_->setEnabled(false);
-        btnDelLast_->setEnabled(false);
-    }
-
+    reset();
     setP4WindowTitle(this, "Curve plot");
 }
 
 void QCurveDlg::reset()
 {
-    QString buf;
-
     edt_curve_->setText("");
 
-    buf = QString("%d").arg(DEFAULT_CURVEPOINTS);
-    edt_points_->setText(buf);
-
-    buf = QString("%d").arg(DEFAULT_CURVEMEMORY);
-    edt_memory_->setText(buf);
-
-    buf = QString("%d").arg(DEFAULT_CURVEPRECIS);
-    edt_precis_->setText(buf);
+    edt_points_->setValue(DEFAULT_CURVEPOINTS);
+    edt_memory_->setValue(DEFAULT_CURVEMEMORY);
+    edt_precis_->setValue(DEFAULT_CURVEPRECIS);
 
     btnEvaluate_->setEnabled(true);
     btnPlot_->setEnabled(false);
@@ -187,43 +175,10 @@ void QCurveDlg::onBtnPlot()
     bool dashes, result;
     int points, precis, memory;
 
-    bool ok;
-    QString buf;
-
     dashes = btn_dashes_->isChecked();
-
-    ok = true;
-
-    buf = edt_points_->text();
-    points = buf.toInt();
-    if (points < MIN_CURVEPOINTS || points > MAX_CURVEPOINTS) {
-        buf += " ???";
-        edt_points_->setText(buf);
-        ok = false;
-    }
-
-    buf = edt_precis_->text();
-    precis = buf.toInt();
-    if (precis < MIN_CURVEPRECIS || precis > MAX_CURVEPRECIS) {
-        buf += " ???";
-        edt_precis_->setText(buf);
-        ok = false;
-    }
-
-    buf = edt_memory_->text();
-    memory = buf.toInt();
-    if (memory < MIN_CURVEMEMORY || memory > MAX_CURVEMEMORY) {
-        buf += " ???";
-        edt_memory_->setText(buf);
-        ok = false;
-    }
-
-    if (!ok) {
-        QMessageBox::information(
-            this, "P4", "One of the fields has a value that is out of bounds.\n"
-                        "Please correct before continuing.\n");
-        return;
-    }
+    points = edt_points_->value();
+    precis = edt_precis_->value();
+    memory = edt_memory_->value();
 
     // SECOND: read the resulting file and store the list
     if (!g_VFResults.readCurve(g_ThisVF->getbarefilename())) {
@@ -282,6 +237,13 @@ void QCurveDlg::onBtnDelLast()
         btnDelAll_->setEnabled(false);
         btnDelLast_->setEnabled(false);
     }
+}
+
+void QCurveDlg::onBtnDefaults()
+{
+    edt_points_->setValue(DEFAULT_CURVEPOINTS);
+    edt_precis_->setValue(DEFAULT_CURVEPRECIS);
+    edt_memory_->setValue(DEFAULT_CURVEMEMORY);
 }
 
 void QCurveDlg::finishCurveEvaluation()

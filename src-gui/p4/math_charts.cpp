@@ -76,6 +76,12 @@ void R2_to_psphere(double x, double y, double *pcoord)
 
 void psphere_to_R2(double X, double Y, double Z, double *rcoord)
 {
+    // Z==0 means the point is at the equatorial ring (infinity); callers
+    // guard via is_valid_viewcoord(), but we protect against stray calls.
+    if (Z == 0.0) {
+        rcoord[0] = rcoord[1] = 0.0;
+        return;
+    }
     rcoord[0] = X / Z;
     rcoord[1] = Y / Z;
 }

@@ -44,6 +44,7 @@ SOURCES += win_view.cpp \
     win_plot.cpp \
     win_params.cpp \
     win_orbits.cpp \
+    p4_undo.cpp \
     win_main.cpp \
     win_limitcycles.cpp \
     win_legend.cpp \
@@ -90,6 +91,7 @@ HEADERS += win_view.h \
     win_plot.h \
     win_params.h \
     win_orbits.h \
+    p4_undo.h \
     win_main.h \
     win_limitcycles.h \
     win_legend.h \
@@ -131,3 +133,6 @@ HEADERS += win_view.h \
     print_postscript.h \
     print_xfig.h
 RC_FILE = p4.rc
+
+RESOURCES += p4maple.qrc \
+             p4help.qrc

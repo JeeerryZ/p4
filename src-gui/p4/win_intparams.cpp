@@ -180,21 +180,33 @@ QIntParamsDlg::QIntParamsDlg()
             &QIntParamsDlg::btn_dots_toggled);
     connect(btn_dashes_, &QRadioButton::toggled, this,
             &QIntParamsDlg::btn_dashes_toggled);
+    auto validateFloat = [](QLineEdit *edt, double lo, double hi) {
+        QObject::connect(edt, &QLineEdit::textChanged, edt, [=](const QString &t) {
+            bool ok;
+            double v = t.toDouble(&ok);
+            bool valid = ok && v >= lo && v <= hi;
+            edt->setStyleSheet(valid || t.isEmpty() ? "" : "border: 1px solid red");
+        });
+    };
     connect(edt_stepsize_, &QLineEdit::textChanged, this,
             static_cast<void (QIntParamsDlg::*)(const QString &)>(
                 &QIntParamsDlg::onFieldChange));
+    validateFloat(edt_stepsize_, MIN_HMI, MAX_HMA);
     // connect(edt_curstep, &QLineEdit::textChanged, this,
     //        static_cast<void (QIntParamsDlg::*)(const QString &)>(
     //            &QIntParamsDlg::onFieldChange));
     connect(edt_maxstep_, &QLineEdit::textChanged, this,
             static_cast<void (QIntParamsDlg::*)(const QString &)>(
                 &QIntParamsDlg::onFieldChange));
+    validateFloat(edt_maxstep_, MIN_HMA, MAX_HMA);
     connect(edt_minstep_, &QLineEdit::textChanged, this,
             static_cast<void (QIntParamsDlg::*)(const QString &)>(
                 &QIntParamsDlg::onFieldChange));
+    validateFloat(edt_minstep_, MIN_HMI, MAX_HMI);
     connect(edt_tolerance_, &QLineEdit::textChanged, this,
             static_cast<void (QIntParamsDlg::*)(const QString &)>(
                 &QIntParamsDlg::onFieldChange));
+    validateFloat(edt_tolerance_, MIN_TOLERANCE, MAX_TOLERANCE);
     connect(spin_numpoints_,
             static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
             static_cast<void (QIntParamsDlg::*)(int)>(

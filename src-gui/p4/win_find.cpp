@@ -28,9 +28,12 @@
 #include "win_vf.h"
 
 #include <QButtonGroup>
+#include <QDir>
+#include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 
 QFindDlg::~QFindDlg()
 {
@@ -88,6 +91,23 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
         btn_eval_ = new QPushButton("Pr&epare", this);
     else
         btn_eval_ = new QPushButton("&Evaluate", this);
+
+    progressBar_ = new QProgressBar(this);
+    progressBar_->setRange(0, 0);
+    progressBar_->setTextVisible(false);
+    progressBar_->setFixedHeight(8);
+    progressBar_->hide();
+
+    logArea_ = new QTextEdit(this);
+    logArea_->setReadOnly(true);
+    logArea_->setFont(QFont("Courier", 8));
+    logArea_->setMinimumHeight(80);
+    logArea_->hide();
+
+    btn_clearLog_ = new QPushButton("Clear", this);
+    btn_clearLog_->hide();
+    btn_copyLog_ = new QPushButton("Copy", this);
+    btn_copyLog_->hide();
 
 #ifdef TOOLTIPS
     // btn_maple_->setToolTip("Select Maple as the symbolic manipulator");
@@ -162,6 +182,14 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
 
     mainLayout_->addLayout(layout0);
     mainLayout_->addLayout(layout1);
+    mainLayout_->addWidget(progressBar_);
+
+    QHBoxLayout *logBtnLayout = new QHBoxLayout();
+    logBtnLayout->addWidget(btn_clearLog_);
+    logBtnLayout->addWidget(btn_copyLog_);
+    logBtnLayout->addStretch(0);
+    mainLayout_->addLayout(logBtnLayout);
+    mainLayout_->addWidget(logArea_);
 
     //   mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
 
@@ -315,7 +343,12 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     connect(btn_save_, &QPushButton::clicked, this, &QFindDlg::onBtnSave);
     connect(btn_eval_, &QPushButton::clicked, this, &QFindDlg::onBtnEval);
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QFindDlg::onSaveSignal);
-    // TODO: implement onSaveSignal slot
+    connect(btn_clearLog_, &QPushButton::clicked, logArea_, &QTextEdit::clear);
+    connect(btn_copyLog_, &QPushButton::clicked, this, [=]() {
+        logArea_->selectAll();
+        logArea_->copy();
+    });
+    connect(g_ThisVF, &QInputVF::logOutput, logArea_, &QTextEdit::append);
 
     // finishing
 
@@ -350,9 +383,17 @@ QFindDlg::QFindDlg(QStartDlg *startdlg) : QWidget(startdlg)
     // readSettings();
 }
 
-void QFindDlg::onSaveSignal() {
-    //QSettings settings(g_ThisVF->getbarefilename().append(".conf"), QSettings::NativeFormat);
-    //settings.setValue("QFindDlg/state",saveState());
+void QFindDlg::onSaveSignal()
+{
+    QString confPath =
+        QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+        QDir::separator() +
+        QFileInfo(g_ThisVF->filename_.trimmed()).baseName() + ".conf";
+    QSettings settings(confPath, QSettings::NativeFormat);
+    settings.beginGroup("QFindDlg");
+    settings.setValue("pos", pos());
+    settings.setValue("size", size());
+    settings.endGroup();
 }
 
 void QFindDlg::onBtnLoad()
@@ -494,6 +535,18 @@ void QFindDlg::updateDlgData()
     }
 }
 
-void QFindDlg::signalEvaluating() { btn_eval_->setEnabled(false); }
+void QFindDlg::signalEvaluating()
+{
+    btn_eval_->setEnabled(false);
+    progressBar_->show();
+    logArea_->clear();
+    logArea_->show();
+    btn_clearLog_->show();
+    btn_copyLog_->show();
+}
 
-void QFindDlg::signalEvaluated() { btn_eval_->setEnabled(true); }
+void QFindDlg::signalEvaluated()
+{
+    btn_eval_->setEnabled(true);
+    progressBar_->hide();
+}

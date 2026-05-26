@@ -1,5 +1,32 @@
+# Qt Creator
 **/.qtcreator
-./build/
+
+# qmake generated
 .qmake*
-**Makefile**
+**/Makefile
+**/Makefile.*
+**/object_script.*
+**/moc_predefs.h
+
+# Build intermediates (MinGW in-source release/debug dirs)
+**/release/
+**/debug/
+
+# Build output (final binaries — rebuild with mingw32-make)
+/build/
+
+# CMake build dir (web backend)
+web/backend/build/
+
+# Vendored dep not committed — download asio 1.36.0 separately for web backend build
+web/backend/third_party/asio-1.36.0/
+
+# Local environment config (contains machine-specific paths, never commit)
+web/docker/.env
+
+# Playwright MCP
 .playwright-mcp/
+
+# Claude Code — local only, never commit
+CLAUDE.md
+.claude/

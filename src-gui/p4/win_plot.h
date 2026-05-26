@@ -29,7 +29,9 @@
 #include <QBoxLayout>
 #include <QEvent>
 #include <QHideEvent>
+#include <QLabel>
 #include <QMainWindow>
+#include <QUndoStack>
 
 /* Forward-declarations to solve cross-include problems */
 class QGcfDlg;         // in win_gcf.h
@@ -40,6 +42,8 @@ class QSepDlg;         // in win_separatrices.h
 class QOrbitsDlg;      // in win_orbits.h
 class QLimitCyclesDlg; // in win_limitcycles.h
 class QZoomWnd;        // in win_zoom.h
+class QDockWidget;
+class QTabWidget;
 
 class QPlotWnd : public QMainWindow
 {
@@ -51,6 +55,7 @@ class QPlotWnd : public QMainWindow
 
     QIntParamsDlg *intParamsWindow_;
     QViewDlg *viewParamsWindow_;
+    QUndoStack *undoStack_;
 
   private:
     QStartDlg *parent_;
@@ -78,6 +83,10 @@ class QPlotWnd : public QMainWindow
     QIsoclinesDlg *isoclinesWindow_;
 
     QWinSphere *sphere_; // main sphere
+    QLabel *coordLabel_;
+
+    QDockWidget *controlDock_;
+    QTabWidget *controlTabs_;
 
     int numZooms_;
     int lastZoomIdentifier_;

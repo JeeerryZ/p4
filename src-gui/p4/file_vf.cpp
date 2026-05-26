@@ -30,6 +30,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QSettings>
+#include <QStandardPaths>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -370,8 +371,10 @@ bool QInputVF::checkevaluated(void)
 // -----------------------------------------------------------------------
 bool QInputVF::save(void)
 {
-    QSettings settings(getbarefilename().append(".conf"),
-                       QSettings::NativeFormat);
+    QString confPath =
+        QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+        QDir::separator() + QFileInfo(filename_.trimmed()).baseName() + ".conf";
+    QSettings settings(confPath, QSettings::NativeFormat);
     settings.clear();
     emit saveSignal();
 
@@ -492,6 +495,14 @@ QString QInputVF::getbarefilename(void) const
     return fname.left(dot);
 }
 
+QString QInputVF::gettempbarefilename(void) const
+{
+    QString base = QFileInfo(filename_.trimmed()).baseName();
+    if (base.isEmpty())
+        base = "p4_tmp";
+    return QDir::tempPath() + QDir::separator() + base;
+}
+
 QString QInputVF::getfilename(void) const
 {
     int slash1;
@@ -557,11 +568,11 @@ QString QInputVF::getfilename_gcf(void) const
 }*/
 QString QInputVF::getmaplefilename(void) const
 {
-    return getbarefilename().append(".txt");
+    return gettempbarefilename().append(".txt");
 }
 QString QInputVF::getrunfilename(void) const
 {
-    return getbarefilename().append(".run");
+    return gettempbarefilename().append(".run");
 }
 // curve filenames
 QString QInputVF::getfilename_curvetable(void) const
@@ -574,7 +585,7 @@ QString QInputVF::getfilename_curve(void) const
 }
 QString QInputVF::getPrepareCurveFileName(void) const
 {
-    return getbarefilename().append("_curve_prep.txt");
+    return gettempbarefilename().append("_curve_prep.txt");
 }
 // isoclines filenames
 QString QInputVF::getfilename_isoclinestable(void) const
@@ -587,7 +598,7 @@ QString QInputVF::getfilename_isoclines(void) const
 }
 QString QInputVF::getPrepareIsoclinesFileName(void) const
 {
-    return getbarefilename().append("_isoclines_prep.txt");
+    return gettempbarefilename().append("_isoclines_prep.txt");
 }
 
 // -----------------------------------------------------------------------
@@ -1941,11 +1952,14 @@ void QInputVF::readProcessStdout(void)
                 t = t.mid(i + 1);
             }
             processText_->append(line);
+            emit logOutput(QString::fromLatin1(line));
             i = t.indexOf('\n');
             j = t.indexOf('\r');
         }
-        if (t.length() != 0)
+        if (t.length() != 0) {
             processText_->append(t);
+            emit logOutput(QString::fromLatin1(t));
+        }
     }
 }
 
@@ -2212,7 +2226,6 @@ bool QInputVF::prepareGcf(P4POLYNOM2 f, double y1, double y2, int precision,
 {
     FILE *fp;
     int i;
-    char buf[100];
 
     /*if (symbolicpackage_ == PACKAGE_REDUCE) {
         QString filedotred;
@@ -2233,7 +2246,7 @@ bool QInputVF::prepareGcf(P4POLYNOM2 f, double y1, double y2, int precision,
         fprintf(fp, "f:=");
         for (i = 0; f != nullptr; i++) {
             fprintf(fp, "%s",
-                    printterm2(buf, f, (i == 0) ? true : false, "x", "y"));
+                    printterm2(f, (i == 0) ? true : false, "x", "y").c_str());
             f = f->next_term2;
         }
         if (i == 0)
@@ -2285,7 +2298,7 @@ bool QInputVF::prepareGcf(P4POLYNOM2 f, double y1, double y2, int precision,
     fprintf(fp, "user_f := ");
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm2(buf, f, (i == 0) ? true : false, "x", "y"));
+                printterm2(f, (i == 0) ? true : false, "x", "y").c_str());
         f = f->next_term2;
     }
     if (i == 0)
@@ -2313,7 +2326,6 @@ bool QInputVF::prepareGcf_LyapunovCyl(double theta1, double theta2,
                                       int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM3 f;
     int i;
 
@@ -2341,8 +2353,8 @@ bool QInputVF::prepareGcf_LyapunovCyl(double theta1, double theta2,
         fprintf(fp, "f:=");
 
         for (i = 0; f != nullptr; i++) {
-            fprintf(fp, "%s", printterm3(buf, f, (i == 0) ? true : false, "x",
-                                         "Co", "Si"));
+            fprintf(fp, "%s", printterm3(f, (i == 0) ? true : false, "x",
+                                         "Co", "Si").c_str());
             f = f->next_term3;
         }
         if (i == 0)
@@ -2398,7 +2410,7 @@ bool QInputVF::prepareGcf_LyapunovCyl(double theta1, double theta2,
 
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm3(buf, f, (i == 0) ? true : false, "x", "U", "V"));
+                printterm3(f, (i == 0) ? true : false, "x", "U", "V").c_str());
         f = f->next_term3;
     }
     if (i == 0)
@@ -2429,7 +2441,6 @@ bool QInputVF::prepareGcf_LyapunovCyl(double theta1, double theta2,
 bool QInputVF::prepareGcf_LyapunovR2(int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM2 f;
     int i;
 
@@ -2457,7 +2468,7 @@ bool QInputVF::prepareGcf_LyapunovR2(int precision, int numpoints)
         fprintf(fp, "f:=");
         for (i = 0; f != nullptr; i++) {
             fprintf(fp, "%s",
-                    printterm2(buf, f, (i == 0) ? true : false, "u", "v"));
+                    printterm2(f, (i == 0) ? true : false, "u", "v").c_str());
             f = f->next_term2;
         }
         if (i == 0)
@@ -2510,7 +2521,7 @@ bool QInputVF::prepareGcf_LyapunovR2(int precision, int numpoints)
 
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm2(buf, f, (i == 0) ? true : false, "U", "V"));
+                printterm2(f, (i == 0) ? true : false, "U", "V").c_str());
         f = f->next_term2;
     }
     if (i == 0)
@@ -2619,7 +2630,6 @@ bool QInputVF::prepareCurve(P4POLYNOM2 f, double y1, double y2, int precision,
 {
     FILE *fp;
     int i;
-    char buf[100];
 
     QString mainmaple;
     QString user_platform;
@@ -2659,7 +2669,7 @@ bool QInputVF::prepareCurve(P4POLYNOM2 f, double y1, double y2, int precision,
     fprintf(fp, "user_f := ");
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm2(buf, f, (i == 0) ? true : false, "x", "y"));
+                printterm2(f, (i == 0) ? true : false, "x", "y").c_str());
         f = f->next_term2;
     }
     if (i == 0)
@@ -2686,7 +2696,6 @@ bool QInputVF::prepareCurve_LyapunovCyl(double theta1, double theta2,
                                         int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM3 f;
     int i;
 
@@ -2731,7 +2740,7 @@ bool QInputVF::prepareCurve_LyapunovCyl(double theta1, double theta2,
 
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm3(buf, f, (i == 0) ? true : false, "x", "U", "V"));
+                printterm3(f, (i == 0) ? true : false, "x", "U", "V").c_str());
         f = f->next_term3;
     }
     if (i == 0)
@@ -2761,7 +2770,6 @@ bool QInputVF::prepareCurve_LyapunovCyl(double theta1, double theta2,
 bool QInputVF::prepareCurve_LyapunovR2(int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM2 f;
     int i;
 
@@ -2806,7 +2814,7 @@ bool QInputVF::prepareCurve_LyapunovR2(int precision, int numpoints)
 
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm2(buf, f, (i == 0) ? true : false, "U", "V"));
+                printterm2(f, (i == 0) ? true : false, "U", "V").c_str());
         f = f->next_term2;
     }
     if (i == 0)
@@ -2914,7 +2922,6 @@ bool QInputVF::prepareIsoclines(P4POLYNOM2 f, double y1, double y2,
 {
     FILE *fp;
     int i;
-    char buf[100];
 
     QString mainmaple;
     QString user_platform;
@@ -2954,7 +2961,7 @@ bool QInputVF::prepareIsoclines(P4POLYNOM2 f, double y1, double y2,
     fprintf(fp, "user_f := ");
     for (i = 0; f != nullptr; i++) {
         fprintf(fp, "%s",
-                printterm2(buf, f, (i == 0) ? true : false, "x", "y"));
+                printterm2(f, (i == 0) ? true : false, "x", "y").c_str());
         f = f->next_term2;
     }
     if (i == 0)
@@ -2981,7 +2988,6 @@ bool QInputVF::prepareIsoclines_LyapunovCyl(double theta1, double theta2,
                                             int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM3 f;
     int i;
 
@@ -3027,7 +3033,7 @@ bool QInputVF::prepareIsoclines_LyapunovCyl(double theta1, double theta2,
 
         for (i = 0; f != nullptr; i++) {
             fprintf(fp, "%s",
-                    printterm3(buf, f, (i == 0) ? true : false, "x", "U", "V"));
+                    printterm3(f, (i == 0) ? true : false, "x", "U", "V").c_str());
             f = f->next_term3;
         }
         if (i == 0)
@@ -3057,7 +3063,6 @@ bool QInputVF::prepareIsoclines_LyapunovCyl(double theta1, double theta2,
 bool QInputVF::prepareIsoclines_LyapunovR2(int precision, int numpoints)
 {
     FILE *fp;
-    char buf[100];
     P4POLYNOM2 f;
     int i;
 
@@ -3103,7 +3108,7 @@ bool QInputVF::prepareIsoclines_LyapunovR2(int precision, int numpoints)
 
         for (i = 0; f != nullptr; i++) {
             fprintf(fp, "%s",
-                    printterm2(buf, f, (i == 0) ? true : false, "U", "V"));
+                    printterm2(f, (i == 0) ? true : false, "U", "V").c_str());
             f = f->next_term2;
         }
         if (i == 0)

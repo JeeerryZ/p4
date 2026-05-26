@@ -94,6 +94,8 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     connect(btn_cont_, &QPushButton::clicked, this, &QSepDlg::onbtn_cont);
     connect(edt_epsilon_, &QLineEdit::returnPressed, this,
             &QSepDlg::onepsilon_enter);
+    connect(edt_epsilon_, &QLineEdit::textChanged, this,
+            &QSepDlg::onEpsilonChanged);
 
     // finishing
 
@@ -230,6 +232,14 @@ void QSepDlg::sepEvent(int i)
         onbtn_selectnext();
         break;
     }
+}
+
+void QSepDlg::onEpsilonChanged(const QString &text)
+{
+    bool ok;
+    double val = text.toDouble(&ok);
+    bool valid = ok && val > 0.0;
+    edt_epsilon_->setStyleSheet(valid || text.isEmpty() ? "" : "border: 1px solid red");
 }
 
 void QSepDlg::markBad(QLineEdit *edt)
