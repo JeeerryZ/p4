@@ -27,6 +27,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSpinBox>
 #include <QWidget>
 
 class QCurveDlg : public QWidget
@@ -46,13 +47,14 @@ class QCurveDlg : public QWidget
     QPushButton *btnPlot_;
     QPushButton *btnDelLast_;
     QPushButton *btnDelAll_;
+    QPushButton *btnDefaults_;
 
     QRadioButton *btn_dots_;
     QRadioButton *btn_dashes_;
     QLineEdit *edt_curve_;
-    QLineEdit *edt_points_;
-    QLineEdit *edt_precis_;
-    QLineEdit *edt_memory_;
+    QSpinBox *edt_points_;
+    QSpinBox *edt_precis_;
+    QSpinBox *edt_memory_;
 
     QBoxLayout *mainLayout_;
 
@@ -65,6 +67,7 @@ class QCurveDlg : public QWidget
     void onBtnPlot(void);
     void onBtnDelAll(void);
     void onBtnDelLast(void);
+    void onBtnDefaults(void);
 };
 
 #endif /* WIN_CURVE_H */

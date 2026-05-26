@@ -55,17 +55,17 @@ QZoomWnd::QZoomWnd(QPlotWnd *main, int id, double x1, double y1, double x2,
     toolBar1->setMovable(false);
 
     actClose_ = new QAction("Close", this);
-    actClose_->setShortcut(Qt::ALT + Qt::Key_E);
+    actClose_->setShortcut(Qt::ALT | Qt::Key_E);
     connect(actClose_, &QAction::triggered, this, &QZoomWnd::onBtnClose);
     toolBar1->addAction(actClose_);
 
     actRefresh_ = new QAction("Refresh", this);
-    actRefresh_->setShortcut(Qt::ALT + Qt::Key_R);
+    actRefresh_->setShortcut(Qt::ALT | Qt::Key_R);
     connect(actRefresh_, &QAction::triggered, this, &QZoomWnd::onBtnRefresh);
     toolBar1->addAction(actRefresh_);
 
     actPrint_ = new QAction("Print", this);
-    actPrint_->setShortcut(Qt::ALT + Qt::Key_P);
+    actPrint_->setShortcut(Qt::ALT | Qt::Key_P);
     connect(actPrint_, &QAction::triggered, this, &QZoomWnd::onBtnPrint);
     toolBar1->addAction(actPrint_);
 

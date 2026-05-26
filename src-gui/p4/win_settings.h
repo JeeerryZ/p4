@@ -34,10 +34,6 @@ class QSettingsDlg : public QDialog
     Q_OBJECT
 
   private:
-    QLabel *lbl_base_;
-    QLineEdit *edt_base_;
-    QPushButton *btn_base_;
-
     QLabel *lbl_sum_;
     QLineEdit *edt_sum_;
     QPushButton *btn_sum_;
@@ -73,7 +69,6 @@ class QSettingsDlg : public QDialog
     void onOk(void);
     void onCancel(void);
     void onReset(void);
-    void onBrowseBase(void);
     void onBrowseSum(void);
     void onBrowseTemp(void);
     void onBrowseMaple(void);

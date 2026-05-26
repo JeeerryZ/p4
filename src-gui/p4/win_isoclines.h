@@ -27,6 +27,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSpinBox>
 #include <QWidget>
 
 class QIsoclinesDlg : public QWidget
@@ -46,13 +47,14 @@ class QIsoclinesDlg : public QWidget
     QPushButton *btnPlot_;
     QPushButton *btnDelAll_;
     QPushButton *btnDelLast_;
+    QPushButton *btnDefaults_;
 
     QRadioButton *btn_dots_;
     QRadioButton *btn_dashes_;
     QLineEdit *edt_value_;
-    QLineEdit *edt_points_;
-    QLineEdit *edt_precis_;
-    QLineEdit *edt_memory_;
+    QSpinBox *edt_points_;
+    QSpinBox *edt_precis_;
+    QSpinBox *edt_memory_;
 
     QBoxLayout *mainLayout_;
 
@@ -67,6 +69,7 @@ class QIsoclinesDlg : public QWidget
     void onBtnPlot();
     void onBtnDelAll();
     void onBtnDelLast();
+    void onBtnDefaults();
 };
 
 #endif /* WIN_ISOCLINES_H */

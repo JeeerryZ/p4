@@ -107,6 +107,7 @@ class QInputVF : public QObject
 
     QString getfilename() const;            // filename.inp
     QString getbarefilename() const;        // filename
+    QString gettempbarefilename() const;    // <tempdir>/basename
     QString getfilename_finresults() const; // filename_fin.res
     QString getfilename_infresults() const; // filename_inf.res
     QString getfilename_fintable() const;   // filename_fin.tab
@@ -198,6 +199,7 @@ class QInputVF : public QObject
   signals:
     void saveSignal();
     void loadSignal();
+    void logOutput(const QString &line);
 
   public slots:
     void finishEvaluation(int);

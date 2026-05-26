@@ -790,8 +790,8 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
     double ucoord[2];
     QString buf;
 
-    x = e->x();
-    y = e->y();
+    x = (int)e->position().x();
+    y = (int)e->position().y();
 
     wx = coWorldX(x);
     wy = coWorldY(y);
@@ -808,24 +808,24 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
         switch (g_VFResults.typeofview_) {
         case TYPEOFVIEW_PLANE:
             if (g_VFResults.typeofstudy_ == TYPEOFSTUDY_ONE)
-                buf = QString("Local study   (x,y) = (%f,%f)").arg((float)wx).arg((float)wy);
+                buf = QString("Local study   (x,y) = (%1,%2)").arg((float)wx).arg((float)wy);
             else
-                buf = QString("Planar view   (x,y) = (%f,%f)").arg((float)wx).arg((float)wy);
+                buf = QString("Planar view   (x,y) = (%1,%2)").arg((float)wx).arg((float)wy);
             break;
         case TYPEOFVIEW_SPHERE:
             MATHFUNC(sphere_to_R2)(pcoord[0], pcoord[1], pcoord[2], ucoord);
 
             if (g_VFResults.p_ == 1 && g_VFResults.q_ == 1)
-                buf = QString("The Poincare sphere  (x,y) = (%f,%f)").arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The Poincare sphere  (x,y) = (%1,%2)").arg((float)ucoord[0]).arg((float)ucoord[1]);
             else
-                buf = QString("The P-L sphere of type (%d,%d)  (x,y) = (%f,%f)").arg(g_VFResults.p_).arg(g_VFResults.q_).arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The P-L sphere of type (%1,%2)  (x,y) = (%3,%4)").arg(g_VFResults.p_).arg(g_VFResults.q_).arg((float)ucoord[0]).arg((float)ucoord[1]);
             break;
         case TYPEOFVIEW_U1:
             MATHFUNC(sphere_to_U1)(pcoord[0], pcoord[1], pcoord[2], ucoord);
             if (ucoord[1] >= 0)
-                buf = QString("The U1 chart  (z2,z1) = (%f,%f) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
+                buf = QString("The U1 chart  (z2,z1) = (%1,%2) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
             else
-                buf = QString("The V1' chart (z2,z1) = (%f,%f) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
+                buf = QString("The V1' chart (z2,z1) = (%1,%2) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
             buf.append(chartstring_);
             break;
         case TYPEOFVIEW_V1:
@@ -835,17 +835,17 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
                 ucoord[1] = -ucoord[1];
             }
             if (ucoord[1] >= 0)
-                buf = QString("The V1 chart  (z2,z1) = (%f,%f) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
+                buf = QString("The V1 chart  (z2,z1) = (%1,%2) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
             else
-                buf = QString("The U1' chart (z2,z1) = (%f,%f) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
+                buf = QString("The U1' chart (z2,z1) = (%1,%2) ").arg((float)ucoord[1]).arg((float)ucoord[0]);
             buf.append(chartstring_);
             break;
         case TYPEOFVIEW_U2:
             MATHFUNC(sphere_to_U2)(pcoord[0], pcoord[1], pcoord[2], ucoord);
             if (ucoord[1] >= 0)
-                buf = QString("The U2 chart  (z1,z2) = (%f,%f) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The U2 chart  (z1,z2) = (%1,%2) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
             else
-                buf = QString("The V2' chart (z1,z2) = (%f,%f) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The V2' chart (z1,z2) = (%1,%2) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
             buf.append(chartstring_);
             break;
         case TYPEOFVIEW_V2:
@@ -855,9 +855,9 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
                 ucoord[1] = -ucoord[1];
             }
             if (ucoord[1] >= 0)
-                buf = QString("The V2 chart  (z1,z2) = (%f,%f) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The V2 chart  (z1,z2) = (%1,%2) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
             else
-                buf = QString("The U2' chart (z1,z2) = (%f,%f) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
+                buf = QString("The U2' chart (z1,z2) = (%1,%2) ").arg((float)ucoord[0]).arg((float)ucoord[1]);
             buf.append(chartstring_);
             break;
         }
@@ -873,7 +873,7 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
             if (g_VFResults.p_ == 1 && g_VFResults.q_ == 1)
                 buf = QString("The Poincare sphere");
             else
-                buf = QString("The P-L sphere of type (%d,%d)").arg(g_VFResults.p_).arg(g_VFResults.q_);
+                buf = QString("The P-L sphere of type (%1,%2)").arg(g_VFResults.p_).arg(g_VFResults.q_);
             break;
         case TYPEOFVIEW_U1:
             buf = QString("The U1 chart");
@@ -891,6 +891,7 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
     }
 
     msgBar_->showMessage(buf);
+    emit coordsChanged(buf);
 
     if (selectingZoom_) {
         saveAnchorMap();
@@ -1026,8 +1027,8 @@ void QWinSphere::mousePressEvent(QMouseEvent *e)
         // and second point of a transverse section.
 
         struct DOUBLEPOINT *data1 = new DOUBLEPOINT;
-        data1->x = coWorldX(e->x());
-        data1->y = coWorldY(e->y());
+        data1->x = coWorldX((int)e->position().x());
+        data1->y = coWorldY((int)e->position().y());
         //*((void **)(data1 + 1)) = this;
 
         double pcoord[3];

@@ -23,8 +23,10 @@
 #include "win_main.h"
 
 #include <QBoxLayout>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QTextEdit>
 #include <QWidget>
 
 /* Forward-declaration to solve cross-include problems */
@@ -59,6 +61,10 @@ class QFindDlg : public QWidget
     QPushButton *btn_load_;
     QPushButton *btn_save_;
     QPushButton *btn_eval_;
+    QProgressBar *progressBar_;
+    QTextEdit *logArea_;
+    QPushButton *btn_clearLog_;
+    QPushButton *btn_copyLog_;
 
     QVectorFieldDlg *vfWindow_;
     QParamsDlg *paramsWindow_;

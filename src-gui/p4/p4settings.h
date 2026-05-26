@@ -22,8 +22,10 @@
 
 #include <QString>
 
-void setP4Path(QString s);
-QString getP4Path(void);
+// Maple scripts are extracted from embedded resources to AppLocalDataLocation
+// on first launch (or whenever the app version changes). Maple needs real
+// filesystem paths — it cannot read from Qt resources directly.
+void extractMapleScripts();
 
 void setP4TempPath(QString s);
 QString getP4TempPath(void);
@@ -34,18 +36,13 @@ QString getP4SumTablePath(void);
 void setMapleExe(QString s);
 QString getMapleExe(void);
 
-//void setReduceExe(QString s);
-//QString getReduceExe(void);
-
-QString getP4HelpPath(void);
-QString getP4BinPath(void);
-//QString getP4ReducePath(void);
+// Returns the directory containing the extracted .m scripts.
 QString getP4MaplePath(void);
 
-//void setMathManipulator(QString s);
-QString getMathManipulator(void);
+// Returns the directory containing the p4 executable (and lyapunov/separatrice).
+QString getP4BinPath(void);
 
-//void setMathPackage(int pck);
+QString getMathManipulator(void);
 int getMathPackage(void);
 
 bool readP4Settings(void);

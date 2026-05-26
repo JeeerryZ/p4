@@ -28,6 +28,8 @@
 #include "file_tab.h"
 
 #include <cmath>
+#include <cstdio>
+#include <string>
 
 // -----------------------------------------------------------------------
 //                              EVAL_TERM1
@@ -375,151 +377,175 @@ const char *dumpPoly3(P4POLYNOM3 f, const char *x, const char *y, const char *z)
 //
 // Following are used in preparation of GCF :
 
-char *printterm2(char *buf, struct term2 *f, bool isfirst, const char *x,
-                 const char *y)
+std::string printterm2(struct term2 *f, bool isfirst, const char *x,
+                       const char *y)
 {
-    if (f->coeff == 0) {
-        if (isfirst)
-            strcpy(buf, "0");
-        else
-            *buf = 0;
-        return buf;
-    }
+    char tmp[64];
+    std::string s;
+
+    if (f->coeff == 0)
+        return isfirst ? "0" : "";
 
     if ((f->coeff == 1 || f->coeff == -1) && (f->exp_x != 0 || f->exp_y != 0)) {
         if (f->coeff < 0)
-            sprintf(buf, "-");
-        else if (isfirst)
-            *buf = 0;
-        else
-            sprintf(buf, "+");
+            s = "-";
+        else if (!isfirst)
+            s = "+";
 
         if (f->exp_x != 0) {
-            if (f->exp_x != 1)
-                sprintf(buf + strlen(buf), "%s^%d", x, f->exp_x);
-            else
-                sprintf(buf + strlen(buf), "%s", x);
-
+            if (f->exp_x != 1) {
+                std::snprintf(tmp, sizeof(tmp), "%s^%d", x, f->exp_x);
+                s += tmp;
+            } else {
+                s += x;
+            }
             if (f->exp_y != 0) {
-                if (f->exp_y != 1)
-                    sprintf(buf + strlen(buf), "*%s^%d", y, f->exp_y);
-                else
-                    sprintf(buf + strlen(buf), "*%s", y);
+                if (f->exp_y != 1) {
+                    std::snprintf(tmp, sizeof(tmp), "*%s^%d", y, f->exp_y);
+                    s += tmp;
+                } else {
+                    s += "*";
+                    s += y;
+                }
             }
         } else if (f->exp_y != 0) {
-            if (f->exp_y != 1)
-                sprintf(buf + strlen(buf), "%s^%d", y, f->exp_y);
-            else
-                sprintf(buf + strlen(buf), "%s", y);
+            if (f->exp_y != 1) {
+                std::snprintf(tmp, sizeof(tmp), "%s^%d", y, f->exp_y);
+                s += tmp;
+            } else {
+                s += y;
+            }
         }
-
-        return buf;
+        return s;
     }
 
     if (isfirst)
-        sprintf(buf, "%g", (float)(f->coeff));
+        std::snprintf(tmp, sizeof(tmp), "%g", (float)(f->coeff));
     else
-        sprintf(buf, "%+g", (float)(f->coeff));
+        std::snprintf(tmp, sizeof(tmp), "%+g", (float)(f->coeff));
+    s = tmp;
 
     if (f->exp_x != 0) {
-        if (f->exp_x != 1)
-            sprintf(buf + strlen(buf), "*%s^%d", x, f->exp_x);
-        else
-            sprintf(buf + strlen(buf), "*%s", x);
+        if (f->exp_x != 1) {
+            std::snprintf(tmp, sizeof(tmp), "*%s^%d", x, f->exp_x);
+            s += tmp;
+        } else {
+            s += "*";
+            s += x;
+        }
     }
     if (f->exp_y != 0) {
-        if (f->exp_y != 1)
-            sprintf(buf + strlen(buf), "*%s^%d", y, f->exp_y);
-        else
-            sprintf(buf + strlen(buf), "*%s", y);
+        if (f->exp_y != 1) {
+            std::snprintf(tmp, sizeof(tmp), "*%s^%d", y, f->exp_y);
+            s += tmp;
+        } else {
+            s += "*";
+            s += y;
+        }
     }
-
-    return buf;
+    return s;
 }
 
-char *printterm3(char *buf, struct term3 *f, bool isfirst, const char *r,
-                 const char *Co, const char *Si)
+std::string printterm3(struct term3 *f, bool isfirst, const char *r,
+                       const char *Co, const char *Si)
 {
-    if (f->coeff == 0) {
-        if (isfirst)
-            strcpy(buf, "0");
-        else
-            *buf = 0;
-        return buf;
-    }
+    char tmp[64];
+    std::string s;
+
+    if (f->coeff == 0)
+        return isfirst ? "0" : "";
 
     if ((f->coeff == 1 || f->coeff == -1) &&
         (f->exp_r != 0 || f->exp_Co != 0 || f->exp_Si != 0)) {
         if (f->coeff < 0)
-            sprintf(buf, "-");
-        else if (isfirst)
-            *buf = 0;
-        else
-            sprintf(buf, "+");
+            s = "-";
+        else if (!isfirst)
+            s = "+";
 
         if (f->exp_r != 0) {
-            if (f->exp_r != 1)
-                sprintf(buf + strlen(buf), "%s^%d", r, f->exp_r);
-            else
-                sprintf(buf + strlen(buf), "%s", r);
-
+            if (f->exp_r != 1) {
+                std::snprintf(tmp, sizeof(tmp), "%s^%d", r, f->exp_r);
+                s += tmp;
+            } else {
+                s += r;
+            }
             if (f->exp_Co != 0) {
-                if (f->exp_Co != 1)
-                    sprintf(buf + strlen(buf), "*%s^%d", Co, f->exp_Co);
-                else
-                    sprintf(buf + strlen(buf), "*%s", Co);
+                if (f->exp_Co != 1) {
+                    std::snprintf(tmp, sizeof(tmp), "*%s^%d", Co, f->exp_Co);
+                    s += tmp;
+                } else {
+                    s += "*";
+                    s += Co;
+                }
             }
             if (f->exp_Si != 0) {
-                if (f->exp_Si != 1)
-                    sprintf(buf + strlen(buf), "*%s^%d", Si, f->exp_Si);
-                else
-                    sprintf(buf + strlen(buf), "*%s", Si);
+                if (f->exp_Si != 1) {
+                    std::snprintf(tmp, sizeof(tmp), "*%s^%d", Si, f->exp_Si);
+                    s += tmp;
+                } else {
+                    s += "*";
+                    s += Si;
+                }
             }
         } else if (f->exp_Co != 0) {
-            if (f->exp_Co != 1)
-                sprintf(buf + strlen(buf), "%s^%d", Co, f->exp_Co);
-            else
-                sprintf(buf + strlen(buf), "%s", Co);
-
+            if (f->exp_Co != 1) {
+                std::snprintf(tmp, sizeof(tmp), "%s^%d", Co, f->exp_Co);
+                s += tmp;
+            } else {
+                s += Co;
+            }
             if (f->exp_Si != 0) {
-                if (f->exp_Si != 1)
-                    sprintf(buf + strlen(buf), "*%s^%d", Si, f->exp_Si);
-                else
-                    sprintf(buf + strlen(buf), "*%s", Si);
+                if (f->exp_Si != 1) {
+                    std::snprintf(tmp, sizeof(tmp), "*%s^%d", Si, f->exp_Si);
+                    s += tmp;
+                } else {
+                    s += "*";
+                    s += Si;
+                }
             }
         } else if (f->exp_Si != 0) {
-            if (f->exp_Si != 1)
-                sprintf(buf + strlen(buf), "%s^%d", Si, f->exp_Si);
-            else
-                sprintf(buf + strlen(buf), "%s", Si);
+            if (f->exp_Si != 1) {
+                std::snprintf(tmp, sizeof(tmp), "%s^%d", Si, f->exp_Si);
+                s += tmp;
+            } else {
+                s += Si;
+            }
         }
-
-        return buf;
+        return s;
     }
 
     if (isfirst)
-        sprintf(buf, "%g", f->coeff);
+        std::snprintf(tmp, sizeof(tmp), "%g", f->coeff);
     else
-        sprintf(buf, "%+g", f->coeff);
+        std::snprintf(tmp, sizeof(tmp), "%+g", f->coeff);
+    s = tmp;
 
     if (f->exp_r != 0) {
-        if (f->exp_r != 1)
-            sprintf(buf + strlen(buf), "*%s^%d", r, f->exp_r);
-        else
-            sprintf(buf + strlen(buf), "*%s", r);
+        if (f->exp_r != 1) {
+            std::snprintf(tmp, sizeof(tmp), "*%s^%d", r, f->exp_r);
+            s += tmp;
+        } else {
+            s += "*";
+            s += r;
+        }
     }
     if (f->exp_Co != 0) {
-        if (f->exp_Co != 1)
-            sprintf(buf + strlen(buf), "*%s^%d", Co, f->exp_Co);
-        else
-            sprintf(buf + strlen(buf), "*%s", Co);
+        if (f->exp_Co != 1) {
+            std::snprintf(tmp, sizeof(tmp), "*%s^%d", Co, f->exp_Co);
+            s += tmp;
+        } else {
+            s += "*";
+            s += Co;
+        }
     }
     if (f->exp_Si != 0) {
-        if (f->exp_Si != 1)
-            sprintf(buf + strlen(buf), "*%s^%d", Si, f->exp_Si);
-        else
-            sprintf(buf + strlen(buf), "*%s", Si);
+        if (f->exp_Si != 1) {
+            std::snprintf(tmp, sizeof(tmp), "*%s^%d", Si, f->exp_Si);
+            s += tmp;
+        } else {
+            s += "*";
+            s += Si;
+        }
     }
-
-    return buf;
+    return s;
 }

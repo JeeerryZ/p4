@@ -24,7 +24,9 @@
 #include "math_gcf.h"
 
 #include <QButtonGroup>
+#include <QLabel>
 #include <QMessageBox>
+#include <QSpinBox>
 
 QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint)
@@ -40,16 +42,20 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
 
     QLabel *lbl1 = new QLabel("Appearance: ", this);
 
-    edt_points_ = new QLineEdit("", this);
+    edt_points_ = new QSpinBox(this);
+    edt_points_->setRange(MIN_GCFPOINTS, MAX_GCFPOINTS);
     QLabel *lbl2 = new QLabel("#Points: ", this);
 
-    edt_precis_ = new QLineEdit("", this);
+    edt_precis_ = new QSpinBox(this);
+    edt_precis_->setRange(MIN_GCFPRECIS, MAX_GCFPRECIS);
     QLabel *lbl3 = new QLabel("Precision: ", this);
 
-    edt_memory_ = new QLineEdit("", this);
+    edt_memory_ = new QSpinBox(this);
+    edt_memory_->setRange(MIN_GCFMEMORY, MAX_GCFMEMORY);
     QLabel *lbl4 = new QLabel("Max. Memory: ", this);
 
     btn_evaluate_ = new QPushButton("&Evaluate", this);
+    btn_defaults_ = new QPushButton("Defaults", this);
 
 #ifdef TOOLTIPS
     btn_dots_->setToolTip(
@@ -57,20 +63,9 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     btn_dashes_->setToolTip("Connect points of the curve of singularities with "
                             "small line segments");
     btn_evaluate_->setToolTip("Start evaluation (using symbolic manipulator)");
-    QString ttip;
-    ttip = QString::fromStdString("Number of points. Must be between " +
-                                  std::to_string(MIN_GCFPOINTS) + " and " +
-                                  std::to_string(MAX_GCFPOINTS));
-    edt_points_->setToolTip(ttip);
-    ttip = QString::fromStdString("Required precision. Must be between " +
-                                  std::to_string(MIN_GCFPRECIS) + " and " +
-                                  std::to_string(MAX_GCFPRECIS));
-    edt_precis_->setToolTip(ttip);
-    ttip = QString::fromStdString("Maximum amount of memory (in kilobytes) "
-                                  "spent on plotting GCF.\nMust be between " +
-                                  std::to_string(MIN_GCFMEMORY) + " and " +
-                                  std::to_string(MAX_GCFMEMORY));
-    edt_memory_->setToolTip(ttip);
+    edt_points_->setToolTip("Number of horizontal/vertical sample points");
+    edt_precis_->setToolTip("Required precision (digits)");
+    edt_memory_->setToolTip("Maximum memory budget (kilobytes)");
 #endif
 
     // layout
@@ -93,6 +88,7 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addStretch(0);
     layout2->addWidget(btn_evaluate_);
+    layout2->addWidget(btn_defaults_);
     layout2->addStretch(0);
 
     mainLayout_->addLayout(layout1);
@@ -106,23 +102,18 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
 
     connect(btn_evaluate_, &QPushButton::clicked, this,
             &QGcfDlg::onbtn_evaluate);
+    connect(btn_defaults_, &QPushButton::clicked, this, &QGcfDlg::reset);
     // finishing
 
+    reset();
     setP4WindowTitle(this, "GCF Plot");
 }
 
 void QGcfDlg::reset(void)
 {
-    QString buf;
-
-    buf = QString("%d").arg(DEFAULT_GCFPOINTS);
-    edt_points_->setText(buf);
-
-    buf = QString("%d").arg(DEFAULT_GCFPRECIS);
-    edt_precis_->setText(buf);
-
-    buf = QString("%d").arg(DEFAULT_GCFMEMORY);
-    edt_memory_->setText(buf);
+    edt_points_->setValue(DEFAULT_GCFPOINTS);
+    edt_precis_->setValue(DEFAULT_GCFPRECIS);
+    edt_memory_->setValue(DEFAULT_GCFMEMORY);
 
     if (g_VFResults.config_dashes_)
         btn_dashes_->toggle();
@@ -135,45 +126,10 @@ void QGcfDlg::onbtn_evaluate(void)
     bool dashes, result;
     int points, precis, memory;
 
-    bool ok;
-    QString buf;
-
     dashes = btn_dashes_->isChecked();
-
-    ok = true;
-
-    buf = edt_points_->text();
-    points = buf.toInt();
-
-    if (points < MIN_GCFPOINTS || points > MAX_GCFPOINTS) {
-        buf += " ???";
-        edt_points_->setText(buf);
-        ok = false;
-    }
-
-    buf = edt_precis_->text();
-    precis = buf.toInt();
-    if (precis < MIN_GCFPRECIS || precis > MAX_GCFPRECIS) {
-        buf += " ???";
-        edt_precis_->setText(buf);
-        ok = false;
-    }
-
-    buf = edt_memory_->text();
-    memory = buf.toInt();
-    if (memory < MIN_GCFMEMORY || memory > MAX_GCFMEMORY) {
-        buf += " ???";
-        edt_memory_->setText(buf);
-        ok = false;
-    }
-
-    if (!ok) {
-        QMessageBox::information(
-            this, "P4", "One of the fields has a value that is out of bounds.\n"
-                        "Please correct before continuing.\n");
-
-        return;
-    }
+    points = edt_points_->value();
+    precis = edt_precis_->value();
+    memory = edt_memory_->value();
 
     // Evaluate GCF with given parameters {dashes, points, precis, memory}.
 

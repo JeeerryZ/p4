@@ -156,6 +156,9 @@ class QWinSphere : public QWidget
     int coWinV(double);
     int coWinH(double);
 
+  signals:
+    void coordsChanged(const QString &coords);
+
   public slots:
     void resizeEvent(QResizeEvent *e);
     void mouseMoveEvent(QMouseEvent *e);

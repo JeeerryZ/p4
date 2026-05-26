@@ -21,6 +21,7 @@
 
 #include "custom.h"
 #include "math_orbits.h"
+#include "p4_undo.h"
 
 QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint)
@@ -94,6 +95,8 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     // connections
 
     connect(btnSelect_, &QPushButton::clicked, this, &QOrbitsDlg::onBtnSelect);
+    connect(edt_x0_, &QLineEdit::textChanged, this, &QOrbitsDlg::onCoordChanged);
+    connect(edt_y0_, &QLineEdit::textChanged, this, &QOrbitsDlg::onCoordChanged);
     connect(btnForwards_, &QPushButton::clicked, this,
             &QOrbitsDlg::onBtnForwards);
     connect(btnBackwards_, &QPushButton::clicked, this,
@@ -172,25 +175,25 @@ void QOrbitsDlg::onBtnBackwards(void)
         if (!orbitSelected_)
             return;
 
-        mainSphere_->prepareDrawing();
-        orbitStarted_ =
-            startOrbit(mainSphere_, selected_x0_, selected_y0_, true);
-        mainSphere_->finishDrawing();
+        plotwnd_->undoStack_->push(
+            new AddOrbitCmd(mainSphere_, selected_x0_, selected_y0_, -1));
 
-        if (orbitStarted_) {
+        if (g_VFResults.current_orbit_ != nullptr) {
+            orbitStarted_ = true;
             btnDelAll_->setEnabled(true);
             btnDelLast_->setEnabled(true);
+            btnBackwards_->setEnabled(false);
+            btnContinue_->setEnabled(true);
         }
+        return;
     }
 
-    if (orbitStarted_) {
-        mainSphere_->prepareDrawing();
-        integrateOrbit(mainSphere_, -1);
-        mainSphere_->finishDrawing();
+    mainSphere_->prepareDrawing();
+    integrateOrbit(mainSphere_, -1);
+    mainSphere_->finishDrawing();
 
-        btnBackwards_->setEnabled(false);
-        btnContinue_->setEnabled(true);
-    }
+    btnBackwards_->setEnabled(false);
+    btnContinue_->setEnabled(true);
 }
 
 void QOrbitsDlg::onBtnContinue(void)
@@ -212,25 +215,25 @@ void QOrbitsDlg::onBtnForwards(void)
         if (!orbitSelected_)
             return;
 
-        mainSphere_->prepareDrawing();
-        orbitStarted_ =
-            startOrbit(mainSphere_, selected_x0_, selected_y0_, true);
-        mainSphere_->finishDrawing();
+        plotwnd_->undoStack_->push(
+            new AddOrbitCmd(mainSphere_, selected_x0_, selected_y0_, 1));
 
-        if (orbitStarted_) {
+        if (g_VFResults.current_orbit_ != nullptr) {
+            orbitStarted_ = true;
             btnDelAll_->setEnabled(true);
             btnDelLast_->setEnabled(true);
+            btnForwards_->setEnabled(false);
+            btnContinue_->setEnabled(true);
         }
+        return;
     }
 
-    if (orbitStarted_) {
-        mainSphere_->prepareDrawing();
-        integrateOrbit(mainSphere_, 1);
-        mainSphere_->finishDrawing();
+    mainSphere_->prepareDrawing();
+    integrateOrbit(mainSphere_, 1);
+    mainSphere_->finishDrawing();
 
-        btnForwards_->setEnabled(false);
-        btnContinue_->setEnabled(true);
-    }
+    btnForwards_->setEnabled(false);
+    btnContinue_->setEnabled(true);
 }
 
 void QOrbitsDlg::onBtnDelAll(void)
@@ -247,6 +250,7 @@ void QOrbitsDlg::onBtnDelAll(void)
     g_VFResults.first_orbit_ = nullptr;
     g_VFResults.current_orbit_ = nullptr;
 
+    plotwnd_->undoStack_->clear();
     mainSphere_->refresh();
 }
 
@@ -254,9 +258,7 @@ void QOrbitsDlg::onBtnDelLast(void)
 {
     plotwnd_->getDlgData();
 
-    mainSphere_->prepareDrawing();
-    deleteLastOrbit(mainSphere_);
-    mainSphere_->finishDrawing();
+    plotwnd_->undoStack_->push(new DelLastOrbitCmd(mainSphere_));
 
     orbitStarted_ = false;
     orbitSelected_ = false;
@@ -289,6 +291,21 @@ void QOrbitsDlg::orbitEvent(int i)
         onBtnDelAll();
         break;
     }
+}
+
+void QOrbitsDlg::onCoordChanged(const QString &)
+{
+    bool xok, yok;
+    edt_x0_->text().toDouble(&xok);
+    edt_y0_->text().toDouble(&yok);
+
+    edt_x0_->setStyleSheet(xok || edt_x0_->text().isEmpty()
+                               ? ""
+                               : "border: 1px solid red");
+    edt_y0_->setStyleSheet(yok || edt_y0_->text().isEmpty()
+                               ? ""
+                               : "border: 1px solid red");
+    btnSelect_->setEnabled(xok && yok);
 }
 
 void QOrbitsDlg::reset(void)

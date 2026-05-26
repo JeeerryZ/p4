@@ -66,6 +66,7 @@ class QOrbitsDlg : public QWidget
     void onBtnForwards(void);
     void onBtnDelAll(void);
     void onBtnDelLast(void);
+    void onCoordChanged(const QString &);
 
     void setInitialPoint(double, double);
 };

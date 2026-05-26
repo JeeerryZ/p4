@@ -27,9 +27,12 @@
 #include "win_about.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTextBrowser>
 
 QStartDlg *g_p4stardlg = nullptr;
@@ -71,6 +74,10 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
 
     btn_browse_ = new QPushButton("&Browse", this);
 
+    recentMenu_ = new QMenu("Recent Files", this);
+    btn_browse_->setMenu(recentMenu_);
+    updateRecentFilesMenu();
+
 #ifdef TOOLTIPS
     btn_quit_->setToolTip("Quit P4");
     btn_view_->setToolTip(
@@ -111,12 +118,12 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     viewMenu_ = new QMenu(this);
 
     QAction *ActFin = new QAction("Fini&te", this);
-    ActFin->setShortcut(Qt::ALT + Qt::Key_T);
+    ActFin->setShortcut(Qt::ALT | Qt::Key_T);
     connect(ActFin, &QAction::triggered, this, &QStartDlg::onViewFinite);
     viewMenu_->addAction(ActFin);
 
     QAction *ActInf = new QAction("&Infinite", this);
-    ActInf->setShortcut(Qt::ALT + Qt::Key_I);
+    ActInf->setShortcut(Qt::ALT | Qt::Key_I);
     connect(ActInf, &QAction::triggered, this, &QStartDlg::onViewInfinite);
     viewMenu_->addAction(ActInf);
 
@@ -166,8 +173,11 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
 
 void QStartDlg::onSaveSignal()
 {
-    QSettings settings(g_ThisVF->getbarefilename().append(".conf"),
-                       QSettings::NativeFormat);
+    QString confPath =
+        QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+        QDir::separator() +
+        QFileInfo(g_ThisVF->filename_.trimmed()).baseName() + ".conf";
+    QSettings settings(confPath, QSettings::NativeFormat);
     settings.beginGroup("QStartDlg");
 
     settings.setValue("pos", pos());
@@ -207,6 +217,8 @@ void QStartDlg::onSaveSignal()
 
 void QStartDlg::onLoadSignal()
 {
+    addToRecentFiles(g_ThisVF->filename_);
+
     QSettings settings(g_ThisVF->getbarefilename().append(".conf"),
                        QSettings::NativeFormat);
     settings.beginGroup("QStartDlg");
@@ -260,37 +272,15 @@ void QStartDlg::onLoadSignal()
 
 void QStartDlg::onHelp()
 {
-    // display help
-    QTextBrowser *hlp;
-    QString helpname;
+    QTextBrowser *hlp = static_cast<QTextBrowser *>(helpWindow_);
 
-    helpname = getP4HelpPath();
-    if (helpname.isNull()) {
-        QMessageBox::critical(this, "P4",
-                              "Cannot determine P4 install "
-                              "location!\nPlease re-check "
-                              "installation.\n");
-        return;
-    }
-
-    helpname += QDir::separator();
-    helpname += P4HELPFILE;
-
-    if (QFile(helpname).exists() == false) {
-        QMessageBox::critical(this, "P4",
-                              "Cannot find P4 help files in "
-                              "install location!\nPlease re-check "
-                              "installation.\n");
-        return;
-    }
-
-    hlp = (QTextBrowser *)helpWindow_;
-
-    if (hlp == nullptr) {
+    if (hlp == nullptr)
         hlp = new QTextBrowser();
-    }
 
-    hlp->setSource(QUrl::fromLocalFile(helpname));
+    // Help files are embedded in the binary as Qt resources — no install
+    // path required.  QTextBrowser resolves relative links within qrc://
+    // automatically, so all images load without extraction.
+    hlp->setSource(QUrl("qrc:/help/p4.html"));
     hlp->resize(640, 480);
     if (g_p4smallicon != nullptr)
         hlp->setWindowIcon(*g_p4smallicon);
@@ -510,6 +500,43 @@ void QStartDlg::signalChanged()
     }
 }
 
+void QStartDlg::addToRecentFiles(const QString &path)
+{
+    if (path.isEmpty() || path.trimmed() == DEFAULTFILENAME)
+        return;
+    QSettings s("P4", "P4");
+    QStringList files = s.value("recentFiles").toStringList();
+    files.removeAll(path);
+    files.prepend(path);
+    while (files.size() > 10)
+        files.removeLast();
+    s.setValue("recentFiles", files);
+    updateRecentFilesMenu();
+}
+
+void QStartDlg::updateRecentFilesMenu()
+{
+    QSettings s("P4", "P4");
+    QStringList files = s.value("recentFiles").toStringList();
+    recentMenu_->clear();
+    for (const QString &f : files) {
+        if (QFile::exists(f)) {
+            QAction *act = recentMenu_->addAction(f);
+            act->setData(f);
+            connect(act, &QAction::triggered, this, &QStartDlg::onRecentFile);
+        }
+    }
+    if (recentMenu_->isEmpty())
+        recentMenu_->addAction("(no recent files)")->setEnabled(false);
+}
+
+void QStartDlg::onRecentFile()
+{
+    QAction *act = qobject_cast<QAction *>(sender());
+    if (act)
+        edt_name_->setText(act->data().toString());
+}
+
 void QStartDlg::onBrowse()
 {
     QString result;
@@ -521,6 +548,7 @@ void QStartDlg::onBrowse()
 
     if (!(result.isNull())) {
         edt_name_->setText(result);
+        addToRecentFiles(result);
     }
 }
 
@@ -660,8 +688,6 @@ QWidget *QStartDlg::showText(QWidget *win, QString caption, QString fname)
 
 void QStartDlg::closeEvent(QCloseEvent *ce)
 {
-    int result;
-
     // This event get to process window-system close events.
     // A close event is subtly different from a hide event:
     // hide may often mean "iconify" but close means that the window is going
@@ -680,16 +706,29 @@ void QStartDlg::closeEvent(QCloseEvent *ce)
         return;
     }
 
-    result =
-        QMessageBox::information(this, "P4",
-                                 "The vector field has been changed since "
-                                 "the last save.",
-                                 "&Save Now", "&Cancel", "&Leave Anyway", 0, 1);
+    auto result =
+        QMessageBox::question(this, "P4",
+                              "The vector field has been changed since "
+                              "the last save.",
+                              QMessageBox::Save | QMessageBox::Discard |
+                                  QMessageBox::Cancel,
+                              QMessageBox::Cancel);
 
-    if (result == 2)
+    if (result == QMessageBox::Discard)
         ce->accept();
     else {
-        if (result == 0) {
+        if (result == QMessageBox::Save) {
+            if (g_ThisVF->filename_.trimmed() == DEFAULTFILENAME) {
+                QString newFile = QFileDialog::getSaveFileName(
+                    this, "Save vector field as...", QDir::homePath(),
+                    "Vector Field files (*.inp);;All Files (*.*)");
+                if (newFile.isNull()) {
+                    ce->ignore();
+                    return;
+                }
+                edt_name_->setText(newFile);
+                g_ThisVF->filename_ = newFile;
+            }
             if (g_ThisVF->save()) {
                 ce->accept();
                 return;

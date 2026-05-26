@@ -80,11 +80,6 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
 {
     //  setFont( QFont( FONTSTYLE, FONTSIZE ) );
 
-    edt_base_ = new QLineEdit(StripQuotes(getP4Path()), this);
-    lbl_base_ = new QLabel("&Base Installation Path", this);
-    btn_base_ = new QPushButton("Browse...", this);
-    lbl_base_->setBuddy(edt_base_);
-
     edt_sum_ = new QLineEdit(StripQuotes(getP4SumTablePath()), this);
     lbl_sum_ = new QLabel("&Sumtable Path", this);
     btn_sum_ = new QPushButton("Browse...", this);
@@ -124,7 +119,6 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
     btn_ok_->setDefault(true);
 
 #ifdef TOOLTIPS
-    btn_base_->setToolTip("Search for this path on your computer");
     btn_sum_->setToolTip("Search for this path on your computer");
     btn_temp_->setToolTip("Search for this path on your computer");
     btn_maple_->setToolTip("Search for this file on your computer.\nYou need a "
@@ -132,8 +126,6 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
                            "something like cmaple9.5.exe in Windows.");
     // btn_red->setToolTip("Search for this file on your computer.\n");
 
-    edt_base_->setToolTip("The base installation path.  In here, one finds "
-                          "bin/, help/ and reduce/ subdirectories.");
     edt_sum_->setToolTip("The path where sumtables are stored when calculating "
                          "Lyapunov constants.");
     edt_temp_->setToolTip("Temporary path name.\nLeave blank when you want "
@@ -154,11 +146,8 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
     mainLayout_->addSpacing(4);
     mainLayout_->addWidget(new QLabel(
         "These settings are application-wide and will be saved upon exit.\n"
-        "An improper value may lead to failure of evaluating vector fields.\n"
-#ifdef Q_OS_WIN
-        "\n"
-        "Note: you are allowed to used spaces in the path names."
-#endif
+        "Maple scripts are bundled inside the application — no install path needed.\n"
+        "Only the Maple executable path requires configuration."
         ,
         this));
     mainLayout_->addSpacing(4);
@@ -172,18 +161,15 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
 
     QGridLayout *lay00 = new QGridLayout();
 
-    lay00->addWidget(lbl_base_, 0, 0);
-    lay00->addWidget(edt_base_, 0, 1);
-    lay00->addWidget(btn_base_, 0, 2);
-    lay00->addWidget(lbl_sum_, 1, 0);
-    lay00->addWidget(edt_sum_, 1, 1);
-    lay00->addWidget(btn_sum_, 1, 2);
-    lay00->addWidget(lbl_temp_, 2, 0);
-    lay00->addWidget(edt_temp_, 2, 1);
-    lay00->addWidget(btn_temp_, 2, 2);
-    lay00->addWidget(lbl_maple_, 3, 0);
-    lay00->addWidget(edt_maple_, 3, 1);
-    lay00->addWidget(btn_maple_, 3, 2);
+    lay00->addWidget(lbl_sum_, 0, 0);
+    lay00->addWidget(edt_sum_, 0, 1);
+    lay00->addWidget(btn_sum_, 0, 2);
+    lay00->addWidget(lbl_temp_, 1, 0);
+    lay00->addWidget(edt_temp_, 1, 1);
+    lay00->addWidget(btn_temp_, 1, 2);
+    lay00->addWidget(lbl_maple_, 2, 0);
+    lay00->addWidget(edt_maple_, 2, 1);
+    lay00->addWidget(btn_maple_, 2, 2);
     // lay00->addWidget(lbl_red, 4, 0);
     // lay00->addWidget(edt_red, 4, 1);
     // lay00->addWidget(btn_red, 4, 2);
@@ -208,8 +194,6 @@ QSettingsDlg::QSettingsDlg(QWidget *parent, Qt::WindowFlags f)
 
     setLayout(mainLayout_);
 
-    connect(btn_base_, &QPushButton::clicked, this,
-            &QSettingsDlg::onBrowseBase);
     connect(btn_sum_, &QPushButton::clicked, this, &QSettingsDlg::onBrowseSum);
     connect(btn_temp_, &QPushButton::clicked, this,
             &QSettingsDlg::onBrowseTemp);
@@ -246,11 +230,6 @@ void QSettingsDlg::onOk(void)
 {
     QString s;
 
-    // Strip outer Quotes and white space, in any order, and possible also
-    // trailing slash
-
-    s = StripSlash(StripQuotes(StripQuotes(edt_base_->text()).trimmed()));
-    setP4Path(s);
     s = StripSlash(StripQuotes(StripQuotes(edt_sum_->text()).trimmed()));
     setP4SumTablePath(s);
     s = StripSlash(StripQuotes(StripQuotes(edt_temp_->text()).trimmed()));
@@ -307,7 +286,6 @@ void QSettingsDlg::onOk(void)
 
 void QSettingsDlg::onReset(void)
 {
-    edt_base_->setText(StripQuotes(getDefaultP4Path()));
     edt_sum_->setText(StripQuotes(getDefaultP4SumTablePath()));
     edt_temp_->setText(StripQuotes(getDefaultP4TempPath()));
     edt_maple_->setText(StripQuotes(getDefaultMapleInstallation()));
@@ -333,12 +311,6 @@ void QSettingsDlg::onBrowseTemp(void)
 void QSettingsDlg::onBrowseSum(void)
 {
     browseForExistingPathOrFile(edt_sum_, "Select sumtable path:", false);
-}
-
-void QSettingsDlg::onBrowseBase(void)
-{
-    browseForExistingPathOrFile(edt_base_,
-                                "Select P4 base installation path:", false);
 }
 
 void QSettingsDlg::browseForExistingPathOrFile(QLineEdit *edt, QString caption,

@@ -2,32 +2,37 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# P4 macOS Installer — animated
+# P4 macOS Installer
+# Builds P4 from source and assembles a self-contained dist/ directory.
+#
+# Maple scripts and help files are embedded in the p4 binary via Qt resources
+# and extracted automatically at runtime — no separate files needed.
+#
+# Usage:
+#   ./install_mac.sh            # build + install to dist/
+#   ./install_mac.sh --clean    # remove build/ and dist/
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="$SCRIPT_DIR/p4"
+INSTALL_DIR="$SCRIPT_DIR/dist"
 BUILD_DIR="$SCRIPT_DIR/build"
 
-# ── Flags ─────────────────────────────────────────────────────────────────────
 CLEAN=0
 for arg in "$@"; do
     [[ "$arg" == "--clean" ]] && CLEAN=1
 done
 
 if [[ "$CLEAN" -eq 1 ]]; then
-    printf '\033[1;33mCleaning build/ and p4/ ...\033[0m\n'
+    printf '\033[1;33mCleaning build/ and dist/ ...\033[0m\n'
     rm -rf "$BUILD_DIR" "$INSTALL_DIR"
     printf '\033[1;32mDone.\033[0m\n'
     exit 0
 fi
 
-# ── Colors ──────────────────────────────────────────────────────────────────
-BOLD=$'\033[1m';  DIM=$'\033[2m';   NC=$'\033[0m'
-RED=$'\033[0;31m';  GREEN=$'\033[0;32m'; YELLOW=$'\033[0;33m'; CYAN=$'\033[0;36m'
+BOLD=$'\033[1m';  NC=$'\033[0m'
+YELLOW=$'\033[0;33m'
 BRED=$'\033[1;31m'; BGREEN=$'\033[1;32m'; BCYAN=$'\033[1;36m'
 
-# ── Spinner ──────────────────────────────────────────────────────────────────
 _SPIN_PID=""
 _SPIN_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
@@ -44,140 +49,95 @@ spinner_start() {
 
 spinner_stop() {
     [[ -z "$_SPIN_PID" ]] && return
-    kill "$_SPIN_PID" 2>/dev/null; wait "$_SPIN_PID" 2>/dev/null || true  # || true: SIGTERM gives non-zero exit under set -e
+    kill "$_SPIN_PID" 2>/dev/null; wait "$_SPIN_PID" 2>/dev/null || true
     _SPIN_PID=""
     printf "\r\033[K"
 }
 
 trap 'spinner_stop' EXIT
 
-# ── Step result helpers ───────────────────────────────────────────────────────
-ok()   { spinner_stop; printf "  ${BGREEN}✓${NC}  %s\n" "$*"; }
-fail() { spinner_stop; printf "  ${BRED}✗${NC}  %s\n" "$*"; }
-die()  { fail "$*"; exit 1; }
+ok()    { spinner_stop; printf "  ${BGREEN}checkmark${NC}  %s\n" "$*"; }
+fail()  { spinner_stop; printf "  ${BRED}x${NC}  %s\n" "$*"; }
+die()   { fail "$*"; exit 1; }
+phase() { echo; printf "${BCYAN}${BOLD}[ Phase %s/%s ]  %s${NC}\n" "$1" "$2" "$3"; }
 
-phase() {   # phase <n> <total> <name>
-    echo
-    printf "${BCYAN}${BOLD}[ Phase %s/%s ]  %s${NC}\n" "$1" "$2" "$3"
-}
-
-welcome() {
-    printf "\n${BCYAN}${BOLD}╔══════════════════════════════════════╗${NC}\n"
-    printf   "${BCYAN}${BOLD}║        P4  macOS  Installer          ║${NC}\n"
-    printf   "${BCYAN}${BOLD}╚══════════════════════════════════════╝${NC}\n\n"
-}
-
-finish() {
-    echo
-    printf "${BGREEN}${BOLD}══════════════════════════════════════${NC}\n"
-    printf "${BGREEN}${BOLD}  P4 installed → %s/bin/p4${NC}\n" "$INSTALL_DIR"
-    printf "${BGREEN}${BOLD}══════════════════════════════════════${NC}\n\n"
-}
-
-welcome
-
-# ── Architecture / Homebrew prefix ───────────────────────────────────────────
 ARCH="$(uname -m)"
-if [[ "$ARCH" == "arm64" ]]; then
-    BREW_PREFIX="/opt/homebrew"
-else
-    BREW_PREFIX="/usr/local"
-fi
+BREW_PREFIX="$( [[ "$ARCH" == "arm64" ]] && echo "/opt/homebrew" || echo "/usr/local" )"
+has_pkg() { pkg-config --exists "$1" 2>/dev/null; }
 
-# ── Detection helpers ─────────────────────────────────────────────────────────
-has_brew_formula() { brew list --formula "$1" &>/dev/null; }
-has_pkg()          { pkg-config --exists "$1" 2>/dev/null; }
+NEED_BREW=0
+MISSING_PKGS=()
 
-# ── State filled by Phase 1 ───────────────────────────────────────────────────
-NEED_BREW=0        # 1 = homebrew itself is missing
-MISSING_PKGS=()    # brew formulae to install
+printf "\n${BCYAN}${BOLD}======================================${NC}\n"
+printf   "${BCYAN}${BOLD}   P4  macOS  Installer               ${NC}\n"
+printf   "${BCYAN}${BOLD}======================================${NC}\n\n"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-phase 1 4 "Checking environment"
+phase 1 3 "Checking environment"
 
-# Homebrew
 spinner_start "Checking Homebrew"
 if command -v brew &>/dev/null; then
     ok "Homebrew  $(brew --version | head -1)"
 else
-    fail "Homebrew not found — will install"
+    fail "Homebrew not found -- will install"
     NEED_BREW=1
 fi
 
-# pkg-config
 spinner_start "Checking pkg-config"
 if command -v pkg-config &>/dev/null; then
-    ok "pkg-config found"
+    ok "pkg-config"
 else
-    fail "pkg-config missing — will install"
-    MISSING_PKGS+=(pkg-config)
+    fail "pkg-config missing -- will install"; MISSING_PKGS+=(pkg-config)
 fi
 
-# GMP
 spinner_start "Checking gmp"
 if command -v pkg-config &>/dev/null && has_pkg gmp; then
-    ok "gmp  ($(pkg-config --modversion gmp 2>/dev/null || echo 'found'))"
+    ok "gmp  ($(pkg-config --modversion gmp 2>/dev/null || echo found))"
 else
-    fail "gmp — not installed"
-    MISSING_PKGS+=(gmp)
+    fail "gmp -- not installed"; MISSING_PKGS+=(gmp)
 fi
 
-# MPFR
 spinner_start "Checking mpfr"
 if command -v pkg-config &>/dev/null && has_pkg mpfr; then
-    ok "mpfr  ($(pkg-config --modversion mpfr 2>/dev/null || echo 'found'))"
+    ok "mpfr  ($(pkg-config --modversion mpfr 2>/dev/null || echo found))"
 else
-    fail "mpfr — not installed"
-    MISSING_PKGS+=(mpfr)
+    fail "mpfr -- not installed"; MISSING_PKGS+=(mpfr)
 fi
 
-# Qt / qmake
 spinner_start "Checking Qt"
 QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
-if [[ ! -x "$QMAKE" ]]; then
-    QMAKE="$(command -v qmake 2>/dev/null || true)"
-fi
+[[ ! -x "$QMAKE" ]] && QMAKE="$(command -v qmake 2>/dev/null || true)"
 if [[ -x "$QMAKE" ]]; then
     ok "Qt / qmake  ($("$QMAKE" --version 2>&1 | head -1))"
 else
-    fail "Qt / qmake not found — will install"
-    MISSING_PKGS+=(qt)
+    fail "Qt / qmake not found -- will install"; MISSING_PKGS+=(qt)
 fi
 
-# ═══════════════════════════════════════════════════════════════════════════════
-phase 2 4 "Installing dependencies"
+phase 2 3 "Installing dependencies"
 
-# Install Homebrew itself if missing
 if [[ "$NEED_BREW" -eq 1 ]]; then
     spinner_start "Installing Homebrew"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
         </dev/null >>"$SCRIPT_DIR/brew_install.log" 2>&1 \
-        || die "Homebrew installation failed — see brew_install.log"
+        || die "Homebrew installation failed -- see brew_install.log"
     eval "$("$BREW_PREFIX/bin/brew" shellenv)"
     ok "Homebrew installed"
 fi
 
-# Install missing formulae
 if [[ ${#MISSING_PKGS[@]} -eq 0 ]]; then
-    ok "All packages already installed — nothing to do"
+    ok "All packages already installed"
 else
     for pkg in "${MISSING_PKGS[@]}"; do
         spinner_start "Installing $pkg"
         brew install "$pkg" >>"$SCRIPT_DIR/brew_install.log" 2>&1 \
-            || die "Failed to install $pkg — see brew_install.log"
+            || die "Failed to install $pkg -- see brew_install.log"
         ok "$pkg installed"
     done
 fi
 
-# Re-detect qmake after potential Qt install
-if [[ ! -x "$QMAKE" ]]; then
-    QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
-    [[ ! -x "$QMAKE" ]] && QMAKE="$(command -v qmake 2>/dev/null || true)"
-    [[ -x "$QMAKE" ]] || die "qmake still not found after install — is Qt installed?"
-fi
+[[ ! -x "$QMAKE" ]] && QMAKE="$BREW_PREFIX/opt/qt/bin/qmake"
+[[ -x "$QMAKE" ]] || die "qmake still not found after install"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-phase 3 4 "Building P4"
+phase 3 3 "Building and installing"
 
 JOBS="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
 mkdir -p "$BUILD_DIR"
@@ -185,43 +145,33 @@ mkdir -p "$BUILD_DIR"
 spinner_start "Configuring with qmake"
 ( cd "$BUILD_DIR" && "$QMAKE" -r "$SCRIPT_DIR/P4.pro" ) \
     >"$BUILD_DIR/qmake.log" 2>&1 \
-    || die "qmake failed — see build/qmake.log"
+    || die "qmake failed -- see build/qmake.log"
 ok "qmake configured"
 
 spinner_start "Compiling ($JOBS jobs)"
 make -C "$BUILD_DIR" -j"$JOBS" \
     >"$BUILD_DIR/make.log" 2>&1 \
-    || die "Build failed — see build/make.log"
-ok "Build complete  ($JOBS parallel jobs)"
+    || die "Build failed -- see build/make.log"
+ok "Build complete"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-phase 4 4 "Installing to $INSTALL_DIR"
-
-mkdir -p "$INSTALL_DIR/bin" "$INSTALL_DIR/help" "$INSTALL_DIR/sumtables"
-chmod 777 "$INSTALL_DIR/sumtables"
-
-# Binaries
-for bin in p4/p4 lyapunov/lyapunov lyapunov_mpf/lyapunov_mpf separatrice/separatrice; do
-    name="$(basename "$bin")"
-    src="$BUILD_DIR/$bin"
-    spinner_start "Copying $name"
-    if [[ -f "$src" ]]; then
-        cp "$src" "$INSTALL_DIR/bin/"
-        ok "$name"
-    else
-        fail "$name  (not found — skipped)"
-    fi
+spinner_start "Assembling dist/"
+mkdir -p "$INSTALL_DIR"
+for bin in p4 lyapunov lyapunov_mpf separatrice; do
+    src="$BUILD_DIR/$bin/$bin"
+    [[ -f "$src" ]] || die "$bin not found in build/"
+    cp "$src" "$INSTALL_DIR/"
 done
+ok "Binaries copied to dist/"
 
-# Maple scripts
-spinner_start "Copying Maple scripts"
-cp "$SCRIPT_DIR/src-mpl/p4.m"    "$INSTALL_DIR/bin/"
-cp "$SCRIPT_DIR/src-mpl/p4gcf.m" "$INSTALL_DIR/bin/"
-ok "Maple scripts  (p4.m, p4gcf.m)"
+MACDEPLOYQT="$BREW_PREFIX/opt/qt/bin/macdeployqt"
+if [[ -x "$MACDEPLOYQT" ]]; then
+    spinner_start "Running macdeployqt"
+    "$MACDEPLOYQT" "$INSTALL_DIR/p4" >"$BUILD_DIR/macdeployqt.log" 2>&1 || true
+    ok "Qt frameworks bundled"
+fi
 
-# Help files
-spinner_start "Copying help files"
-cp -r "$SCRIPT_DIR/help/." "$INSTALL_DIR/help/"
-ok "Help files"
-
-finish
+echo
+printf "${BGREEN}${BOLD}======================================${NC}\n"
+printf "${BGREEN}${BOLD}  P4 installed -> %s/${NC}\n" "$INSTALL_DIR"
+printf "${BGREEN}${BOLD}  p4  lyapunov  lyapunov_mpf  separatrice${NC}\n"
+printf "${BGREEN}${BOLD}======================================${NC}\n\n"

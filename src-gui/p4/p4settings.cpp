@@ -21,51 +21,90 @@
 
 #include "file_paths.h"
 #include "file_vf.h"
+#include "main.h"
 
+#include <QApplication>
 #include <QDir>
+#include <QFile>
 #include <QSettings>
-
-/*
-    P4 Base Path
-            --> /bin        for bin files
-            --> /help       for help files
-            --> /bin        for maple files
-            --> /reduce     for reduce files
-    Sumtable path
-    Temporary path
-    Maple Exe
-    Reduce Exe
-*/
+#include <QStandardPaths>
 
 static QString s_Settings_mathmanipulator;
-static QString s_Settings_p4path;
 static QString s_Settings_sumtablepath;
 static QString s_Settings_temppath;
 static QString s_Settings_mapleexe;
-//static QString s_Settings_reduceexe;
 static bool s_Settings_changed;
 
-QString getP4Path(void) { return s_Settings_p4path; }
-QString getP4TempPath(void) { return s_Settings_temppath; }
+// -----------------------------------------------------------------------
+//                      EXTRACTMAPLESCRIPTS
+// -----------------------------------------------------------------------
+//
+// Copies the embedded Maple .m files (from the Qt resource ::/maple/) to
+// AppLocalDataLocation/maple/ so that the cmaple process can read them
+// from real filesystem paths.  Re-extracts whenever the app version changes.
+
+void extractMapleScripts()
+{
+    const QString targetDir =
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+        + "/maple";
+
+    QDir().mkpath(targetDir);
+
+    // Use a hidden stamp file to skip extraction when already up to date.
+    const QString stampPath = targetDir + "/.p4version";
+    {
+        QFile stamp(stampPath);
+        if (stamp.open(QIODevice::ReadOnly)) {
+            if (QString::fromLatin1(stamp.readAll()).trimmed() == g_p4Version)
+                return;
+        }
+    }
+
+    // Extract every file listed under the :/maple/ resource prefix.
+    const QDir resourceDir(":/maple");
+    for (const QString &name : resourceDir.entryList(QDir::Files)) {
+        const QString dest = targetDir + "/" + name;
+        QFile::remove(dest);
+        QFile::copy(":/maple/" + name, dest);
+        // Qt copies resources as read-only; make them writable.
+        QFile::setPermissions(
+            dest,
+            QFile::ReadOwner | QFile::WriteOwner |
+            QFile::ReadGroup  | QFile::ReadOther);
+    }
+
+    // Write new stamp.
+    QFile stamp(stampPath);
+    if (stamp.open(QIODevice::WriteOnly))
+        stamp.write(g_p4Version.toLatin1());
+}
+
+// -----------------------------------------------------------------------
+//                      PATH ACCESSORS
+// -----------------------------------------------------------------------
+
+QString getP4MaplePath(void)
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+           + "/maple";
+}
+
+// The sub-executables (lyapunov, separatrice, lyapunov_mpf) must sit next
+// to the p4 executable.  On macOS this is inside the .app bundle's MacOS/
+// directory; on Windows it's the same folder as p4.exe.
+QString getP4BinPath(void)
+{
+    return QApplication::applicationDirPath();
+}
+
+// -----------------------------------------------------------------------
+//                      SETTINGS GETTERS / SETTERS
+// -----------------------------------------------------------------------
+
+QString getP4TempPath(void)     { return s_Settings_temppath; }
 QString getP4SumTablePath(void) { return s_Settings_sumtablepath; }
-QString getMapleExe(void) { return s_Settings_mapleexe; }
-//QString getReduceExe(void) { return s_Settings_reduceexe; }
-
-void setMathManipulator(QString s)
-{
-    if (s_Settings_mathmanipulator != s) {
-        s_Settings_mathmanipulator = s;
-        s_Settings_changed = true;
-    }
-}
-
-void setP4Path(QString s)
-{
-    if (s_Settings_p4path != s) {
-        s_Settings_p4path = s;
-        s_Settings_changed = true;
-    }
-}
+QString getMapleExe(void)       { return s_Settings_mapleexe; }
 
 void setP4TempPath(QString s)
 {
@@ -91,131 +130,43 @@ void setMapleExe(QString s)
     }
 }
 
-/*void setReduceExe(QString s)
-{
-    if (s_Settings_reduceexe != s) {
-        s_Settings_reduceexe = s;
-        s_Settings_changed = true;
-    }
-}*/
-
-QString getP4MaplePath(void)
-{
-    QString f, g;
-    f = getP4Path();
-    if (f.isNull() == false) {
-        g = f;
-        g += QDir::separator();
-        g += "bin";
-    }
-    return g;
-}
-
 QString getMathManipulator(void) { return s_Settings_mathmanipulator; }
 
 int getMathPackage(void)
 {
-    // QString s;
-    // s = getMathManipulator().simplified().toLower();
-    // if (s == "maple")
     return PACKAGE_MAPLE;
-    // else
-    //    return PACKAGE_REDUCE;
 }
 
-/*void setMathPackage(int pck)
-{
-    if (getMathPackage() != pck) {
-        if (pck == PACKAGE_MAPLE)
-            setMathManipulator("Maple");
-        else
-            setMathManipulator("Reduce");
-    }
-}*/
-
-QString getP4HelpPath(void)
-{
-    QString f, g;
-    f = getP4Path();
-    if (f.isNull() == false) {
-        g = f;
-        g += QDir::separator();
-        g += "help";
-    }
-    return g;
-}
-
-QString getP4BinPath(void)
-{
-    QString f, g;
-    f = getP4Path();
-    if (f.isNull() == false) {
-        g = f;
-        g += QDir::separator();
-        g += "bin";
-    }
-    return g;
-}
-
-/*QString getP4ReducePath(void)
-{
-    QString f, g;
-
-    f = getP4Path();
-    if (f.isNull() == false) {
-        g = f;
-        g += QDir::separator();
-        g += "reduce";
-    }
-
-    return g;
-}*/
-
-// ------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
+//                      READ / SAVE SETTINGS
+// -----------------------------------------------------------------------
 
 bool readP4Settings(void)
 {
-    QSettings *p4settings;
-    bool _ok;
-
-    p4settings = new QSettings();
+    QSettings *p4settings = new QSettings();
+    bool _ok = false;
 
     s_Settings_changed = false;
 
-    _ok = false;
-
     if (p4settings->value("/Version").toString() == g_p4Version) {
         _ok = true;
-        s_Settings_p4path = p4settings->value("/InstallPath").toString();
         s_Settings_sumtablepath = p4settings->value("/SumtablePath").toString();
-        s_Settings_temppath = p4settings->value("/TempPath").toString();
-        s_Settings_mapleexe = p4settings->value("/MapleExe").toString();
-//#ifndef Q_OS_WIN
-        //s_Settings_reduceexe = p4settings->value("/ReduceExe").toString();
-        //s_Settings_mathmanipulator = p4settings->value("/Math").toString();
-//#else
+        s_Settings_temppath     = p4settings->value("/TempPath").toString();
+        s_Settings_mapleexe     = p4settings->value("/MapleExe").toString();
         s_Settings_mathmanipulator = "Maple";
-//#endif
-        if (s_Settings_p4path == "" || (s_Settings_mapleexe == ""
-/*#ifndef Q_OS_WIN
-                                        && s_Settings_reduceexe == ""
-#endif*/
-                                        )) {
+
+        if (s_Settings_mapleexe.isEmpty())
             _ok = false;
-        }
     }
 
     delete p4settings;
-    p4settings = nullptr;
 
     if (!_ok) {
-        s_Settings_p4path = getDefaultP4Path();
-        s_Settings_sumtablepath = getDefaultP4SumTablePath();
-        s_Settings_temppath = getDefaultP4TempPath();
-        s_Settings_mapleexe = getDefaultMapleInstallation();
-        //s_Settings_reduceexe = getDefaultReduceInstallation();
+        s_Settings_sumtablepath    = getDefaultP4SumTablePath();
+        s_Settings_temppath        = getDefaultP4TempPath();
+        s_Settings_mapleexe        = getDefaultMapleInstallation();
         s_Settings_mathmanipulator = getDefaultMathManipulator();
-        s_Settings_changed = true;
+        s_Settings_changed         = true;
         return false;
     }
 
@@ -224,24 +175,17 @@ bool readP4Settings(void)
 
 void saveP4Settings(void)
 {
-    QSettings *p4settings;
-
-    if (s_Settings_changed == false)
+    if (!s_Settings_changed)
         return;
 
-    p4settings = new QSettings();
-
-    p4settings->setValue("/Version", g_p4Version);
-    p4settings->setValue("/BuildDate", g_p4VersionDate);
-    p4settings->setValue("/InstallPath", getP4Path());
+    QSettings *p4settings = new QSettings();
+    p4settings->setValue("/Version",      g_p4Version);
+    p4settings->setValue("/BuildDate",    g_p4VersionDate);
     p4settings->setValue("/SumtablePath", getP4SumTablePath());
-    p4settings->setValue("/TempPath", getP4TempPath());
-    p4settings->setValue("/MapleExe", getMapleExe());
+    p4settings->setValue("/TempPath",     getP4TempPath());
+    p4settings->setValue("/MapleExe",     getMapleExe());
 #ifndef Q_OS_WIN
     p4settings->setValue("/Math", getMathManipulator());
-    //p4settings->setValue("/ReduceExe", getReduceExe());
 #endif
-
     delete p4settings;
-    p4settings = nullptr;
 }
