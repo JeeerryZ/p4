@@ -12,8 +12,9 @@
 **/release/
 **/debug/
 
-# Build output (final binaries — rebuild with mingw32-make)
+# Build output (final binaries — rebuild with mingw32-make or install scripts)
 /build/
+/dist/
 
 # CMake build dir (web backend)
 web/backend/build/
