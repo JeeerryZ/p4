@@ -20,12 +20,8 @@
 #ifndef LYAPUNOV_MPF_H
 #define LYAPUNOV_MPF_H
 
-#ifdef _WIN32
-#include "../../mpir/dll/x64/Release/gmp.h"
-#include "../../mpfr/dll/x64/Release/mpfr.h"
-#else
+#include <gmp.h>
 #include <mpfr.h>
-#endif
 
 // definitions
 

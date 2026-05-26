@@ -242,24 +242,24 @@ static QString makechartstring(int p, int q, bool isu1v1chart, bool negchart)
         // make { x = +/- 1/z2^p, y = z1/z2^q }
 
         if (p != 1 && q != 1)
-            buf = QString("{x=%d/z2^%d,y=z1/z2^%d}").arg((int)(negchart ? -1 : 1)).arg(p).arg(q);
+            buf = QString("{x=%1/z2^%2,y=z1/z2^%3}").arg((int)(negchart ? -1 : 1)).arg(p).arg(q);
         else if (p == 1 && q != 1)
-            buf = QString("{x=%d/z2,y=z1/z2^%d}").arg((int)(negchart ? -1 : 1)).arg(q);
+            buf = QString("{x=%1/z2,y=z1/z2^%2}").arg((int)(negchart ? -1 : 1)).arg(q);
         else if (p != 1 && q == 1)
-            buf = QString("{x=%d/z2^%d,y=z1/z2}").arg((int)(negchart ? -1 : 1)).arg(p);
+            buf = QString("{x=%1/z2^%2,y=z1/z2}").arg((int)(negchart ? -1 : 1)).arg(p);
         else
-            buf = QString("{x=%d/z2,y=z1/z2}").arg((int)(negchart ? -1 : 1));
+            buf = QString("{x=%1/z2,y=z1/z2}").arg((int)(negchart ? -1 : 1));
     } else {
         // make { x = 1/z2^p, y = +/- z1/z2^q }
 
         if (p != 1 && q != 1)
-            buf = QString("{x=z1/z2^%d,y=%d/z2^%d}").arg(p).arg((int)(negchart ? -1 : 1)).arg(q);
+            buf = QString("{x=z1/z2^%1,y=%2/z2^%3}").arg(p).arg((int)(negchart ? -1 : 1)).arg(q);
         else if (p == 1 && q != 1)
-            buf = QString("{x=z1/z2,y=%d/z2^%d}").arg((int)(negchart ? -1 : 1)).arg(q);
+            buf = QString("{x=z1/z2,y=%1/z2^%2}").arg((int)(negchart ? -1 : 1)).arg(q);
         else if (p != 1 && q == 1)
-            buf = QString("{x=z1/z2^%d,y=%d/z2}").arg(p).arg((int)(negchart ? -1 : 1));
+            buf = QString("{x=z1/z2^%1,y=%2/z2}").arg(p).arg((int)(negchart ? -1 : 1));
         else
-            buf = QString("{x=z1/z2,y=%d/z2}").arg((int)(negchart ? -1 : 1));
+            buf = QString("{x=z1/z2,y=%1/z2}").arg((int)(negchart ? -1 : 1));
     }
 
     return (QString)buf;
@@ -568,6 +568,9 @@ void QWinSphere::saveAnchorMap(void)
 
 void QWinSphere::adjustToNewSize(void)
 {
+    if (dx_ <= 0 || dy_ <= 0)
+        return;
+
     struct P4POLYLINES *t;
 
     w_ = width();
@@ -2138,7 +2141,7 @@ void QWinSphere::printCurve(void)
     for (it = g_VFResults.curve_vector_.begin(), i = 0;
          it != g_VFResults.curve_vector_.end(); it++, i++) {
         if (it->points != nullptr) {
-            comment = QString("Printing curve %d:").arg(i);
+            comment = QString("Printing curve %1:").arg(i);
             print_comment(comment);
             draw_curve(this, it->points, CCURV, 1);
         }
@@ -2154,7 +2157,7 @@ void QWinSphere::printIsoclines(void)
     for (it = g_VFResults.isocline_vector_.begin(), i = 0;
          it != g_VFResults.isocline_vector_.end(); it++, i++) {
         if (it->points != nullptr) {
-            comment = QString("Printing isocline %d:").arg(i);
+            comment = QString("Printing isocline %1:").arg(i);
             print_comment(comment);
             draw_isoclines(this, it->points, it->color, 1);
         }
@@ -2270,7 +2273,7 @@ void QWinSphere::printOrbits(void)
 
     for (orbit = g_VFResults.first_orbit_; orbit != nullptr;
          orbit = orbit->next_orbit) {
-        s = QString("Starting orbit %d").arg(i++);
+        s = QString("Starting orbit %1").arg(i++);
         print_comment(s);
         drawOrbit(this, orbit->pcoord, orbit->f_orbits, orbit->color);
     }
@@ -2287,7 +2290,7 @@ void QWinSphere::printLimitCycles(void)
 
     for (orbit = g_VFResults.first_lim_cycle_; orbit != nullptr;
          orbit = orbit->next_orbit) {
-        s = QString("Starting Limit Cycle %d").arg(i++);
+        s = QString("Starting Limit Cycle %1").arg(i++);
         print_comment(s);
         drawOrbit(this, orbit->pcoord, orbit->f_orbits, orbit->color);
     }

@@ -39,8 +39,10 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QPrintDialog>
+#include <QResizeEvent>
 #include <QSettings>
 #include <QTabWidget>
+#include <QTimer>
 #include <QToolBar>
 
 QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
@@ -147,13 +149,13 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     undoStack_ = new QUndoStack(this);
     undoStack_->setUndoLimit(50);
 
-    QMenu *editMenu = menuBar()->addMenu("&Edit");
     QAction *actUndo = undoStack_->createUndoAction(this, "&Undo");
     actUndo->setShortcut(QKeySequence::Undo);
     QAction *actRedo = undoStack_->createRedoAction(this, "&Redo");
     actRedo->setShortcut(QKeySequence::Redo);
-    editMenu->addAction(actUndo);
-    editMenu->addAction(actRedo);
+    addAction(actUndo);
+    addAction(actRedo);
+    menuBar()->hide();
 
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QPlotWnd::onSaveSignal);
     connect(g_ThisVF, &QInputVF::loadSignal, this, &QPlotWnd::onLoadSignal);
@@ -229,7 +231,7 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
 
     sphere_->show();
     setCentralWidget(sphere_);
-    resize(NOMINALWIDTHPLOTWINDOW, NOMINALHEIGHTPLOTWINDOW);
+    resize(NOMINALWIDTHPLOTWINDOW + controlDock_->minimumWidth(), NOMINALWIDTHPLOTWINDOW);
 
     intParamsWindow_->updateDlgData();
     viewParamsWindow_->updateDlgData();
@@ -288,7 +290,7 @@ void QPlotWnd::onLoadSignal()
     numZooms_ = settings.value("QPlotWnd/numZooms").toInt();
     if (numZooms_ != 0) {
         for (int i = 1; i <= numZooms_; i++) {
-            QString zoomName = QString("QZoomWnd").arg(i);
+            QString zoomName = QString("QZoomWnd%1").arg(i);
             settings.beginGroup(zoomName);
             int currentZoomId = settings.value("id").toInt();
             double currentZoomX1 = settings.value("x1").toDouble();
@@ -313,10 +315,18 @@ void QPlotWnd::onLoadSignal()
     }
 }
 
+void QPlotWnd::resizeEvent(QResizeEvent *e)
+{
+    QMainWindow::resizeEvent(e);
+    QTimer::singleShot(0, this, &QPlotWnd::adjustHeight);
+}
+
 void QPlotWnd::adjustHeight(void)
 {
     sphere_->adjustToNewSize();
-    resize(width(), height() + sphere_->idealh_ - sphere_->h_);
+    int delta = sphere_->idealh_ - sphere_->h_;
+    if (delta != 0)
+        resize(width(), height() + delta);
     sphere_->refresh();
     statusBar()->showMessage("Ready.");
 }
@@ -589,12 +599,9 @@ void QPlotWnd::customEvent(QEvent *_e)
         if (MATHFUNC(is_valid_viewcoord)(x, y, pcoord)) {
             MATHFUNC(sphere_to_R2)(pcoord[0], pcoord[1], pcoord[2], ucoord);
 
-            orbitsWindow_->show();
             orbitsWindow_->setInitialPoint(ucoord[0], ucoord[1]);
-            if (orbitsWindow_ != nullptr) {
-                //((QWidget *)win)->activateWindow();
-                orbitsWindow_->raise();
-            }
+            controlDock_->show();
+            controlTabs_->setCurrentWidget(orbitsWindow_);
         }
         return;
     }
@@ -617,16 +624,17 @@ void QPlotWnd::customEvent(QEvent *_e)
         MATHFUNC(sphere_to_R2)(pcoord[0], pcoord[1], pcoord[2], ucoord1);
 
         if (x0 == x1 && y0 == y1) {
-            orbitsWindow_->show();
             orbitsWindow_->setInitialPoint(ucoord0[0], ucoord0[1]);
+            controlDock_->show();
+            controlTabs_->setCurrentWidget(orbitsWindow_);
             return;
         }
 
         // mouse clicked in position (x,y)  (world coordinates)
 
         lcWindow_->setSection(ucoord0[0], ucoord0[1], ucoord1[0], ucoord1[1]);
-        lcWindow_->show();
-        lcWindow_->raise();
+        controlDock_->show();
+        controlTabs_->setCurrentWidget(lcWindow_);
         return;
     }
 
@@ -635,6 +643,8 @@ void QPlotWnd::customEvent(QEvent *_e)
         sepWindow_->sepEvent(*oet);
         delete oet;
         oet = nullptr;
+        controlDock_->show();
+        controlTabs_->setCurrentWidget(sepWindow_);
         return;
     }
 

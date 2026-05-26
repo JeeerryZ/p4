@@ -72,7 +72,6 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(layout4);
     mainLayout_->addLayout(layout5);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
 #ifdef TOOLTIPS
@@ -122,11 +121,9 @@ void QSepDlg::setInitialPoint(void)
     lbl_info_[2]->setText(g_CurrentSingularityInfo[2]);
     lbl_info_[3]->setText(g_CurrentSingularityInfo[3]);
 
-    buf = QString("%g").arg((float)g_CurrentSeparatriceEpsilon);
+    buf = QString::number(g_CurrentSeparatriceEpsilon, 'g');
 
     edt_epsilon_->setText(buf);
-    show();
-    //  raise();
 }
 
 void QSepDlg::onbtn_selectnext(void)
@@ -272,7 +269,7 @@ void QSepDlg::onepsilon_enter(void)
     }
 
     g_CurrentSeparatriceEpsilon = eps;
-    s = QString("%g").arg((float)eps);
+    s = QString::number(eps, 'g');
     edt_epsilon_->setText(s);
 
     // pass on to math routines

@@ -29,6 +29,7 @@
 #include <QBoxLayout>
 #include <QEvent>
 #include <QHideEvent>
+#include <QResizeEvent>
 #include <QLabel>
 #include <QMainWindow>
 #include <QUndoStack>
@@ -124,6 +125,9 @@ class QPlotWnd : public QMainWindow
 
     void onSaveSignal();
     void onLoadSignal();
+
+  protected:
+    void resizeEvent(QResizeEvent *e) override;
 };
 
 #endif /* WIN_PLOT_H */

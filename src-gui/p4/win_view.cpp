@@ -147,7 +147,6 @@ QViewDlg::QViewDlg(QWidget *parent)
     mainLayout_->addLayout(layout5);
     mainLayout_->addStretch(0);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
     // connections
@@ -319,13 +318,13 @@ void QViewDlg::btn_square_clicked(void)
             x0 = -x0;
 
         QString buf;
-        buf = QString("%g").arg((float)(x0));
+        buf = QString::number(x0, 'g');
         edt_x0_->setText(buf);
-        buf = QString("%g").arg((float)(-x0));
+        buf = QString::number(-x0, 'g');
         edt_x1_->setText(buf);
-        buf = QString("%g").arg((float)(x0));
+        buf = QString::number(x0, 'g');
         edt_y0_->setText(buf);
-        buf = QString("%g").arg((float)(-x0));
+        buf = QString::number(-x0, 'g');
         edt_y1_->setText(buf);
     }
 }
@@ -346,7 +345,7 @@ bool QViewDlg::readFloatField(QLineEdit *edt, double *presult, double defvalue,
         return true;
     }
 
-    x = QString("%g").arg((float)(*presult));
+    x = QString::number(*presult, 'g');
     if (x != t)
         edt->setText(x);
 
@@ -462,20 +461,20 @@ void QViewDlg::updateDlgData(void)
     else
         btn_sphere_->setEnabled(true);
 
-    buf = QString("%g").arg((float)(g_VFResults.config_projection_));
+    buf = QString::number(g_VFResults.config_projection_, 'g');
     edt_projection_->setText(buf);
     if (g_VFResults.typeofview_ == TYPEOFVIEW_SPHERE && !g_VFResults.plweights_)
         edt_projection_->setEnabled(true);
     else
         edt_projection_->setEnabled(false);
 
-    buf = QString("%g").arg((float)(g_VFResults.xmin_));
+    buf = QString::number(g_VFResults.xmin_, 'g');
     edt_x0_->setText(buf);
-    buf = QString("%g").arg((float)(g_VFResults.xmax_));
+    buf = QString::number(g_VFResults.xmax_, 'g');
     edt_x1_->setText(buf);
-    buf = QString("%g").arg((float)(g_VFResults.ymin_));
+    buf = QString::number(g_VFResults.ymin_, 'g');
     edt_y0_->setText(buf);
-    buf = QString("%g").arg((float)(g_VFResults.ymax_));
+    buf = QString::number(g_VFResults.ymax_, 'g');
     edt_y1_->setText(buf);
 
     if (btn_sphere_->isChecked() == false) {

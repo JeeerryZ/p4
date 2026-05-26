@@ -70,20 +70,25 @@ QP4AboutDlg::QP4AboutDlg(QWidget *parent, Qt::WindowFlags f)
         new QLabel(QString::fromUtf8(
             "    J. Torregrosa (Universitat Autònoma de Barcelona)")),
         8, 1);
-    lay00->addWidget(new QLabel(""), 9, 1);
+    lay00->addWidget(new QLabel(QString::fromUtf8(
+                         "    G.R. Zaninetti (Universidade Federal de S\xc3\xa3o Carlos)")),
+                     9, 1);
+    lay00->addWidget(new QLabel(""), 10, 1);
 
     QString versionstr;
     versionstr = " Version " + g_p4Version + "   " + g_p4VersionDate + " " +
                  g_p4Platform;
 
-    lay00->addWidget(new QLabel(versionstr), 10, 1);
+    lay00->addWidget(new QLabel(versionstr), 11, 1);
 
-    QLabel *l;
-    l = new QLabel("(missing image)");
-    if (p4image_.load(getP4BinPath() + "/portrait.png"))
-        l->setPixmap(p4image_);
+    QLabel *l = new QLabel();
+    QPixmap logo(":/help/p4_flag.png");
+    if (!logo.isNull())
+        l->setPixmap(logo);
+    else
+        l->setText("(missing image)");
 
-    lay00->addWidget(l, 0, 0, 10, 1);
+    lay00->addWidget(l, 0, 0, 11, 1);
 
     mainLayout_->addLayout(lay00);
     QHBoxLayout *buttons = new QHBoxLayout();

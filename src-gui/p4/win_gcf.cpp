@@ -95,7 +95,6 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(lay00);
     mainLayout_->addLayout(layout2);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
     // connections

@@ -102,13 +102,14 @@ static void xfig_print_box(int x, int y, int color)
     */
 
     QString s;
-    s = QString("2 2 0 1 %d %d 0 0 46 0.0 0 0 0 0 0 5\n").arg(color).arg(color);
+    s = QString::asprintf("2 2 0 1 %d %d 0 0 46 0.0 0 0 0 0 0 5\n", color, color);
     s_XFigStream << s;
-    s = QString("    %d %d %d %d %d %d %d %d %d %d\n").arg(x + s_XFigSymbolWidth / 2).arg(
-              y - s_XFigSymbolWidth / 2).arg(x + s_XFigSymbolWidth / 2).arg(
-              y + s_XFigSymbolWidth / 2).arg(x - s_XFigSymbolWidth / 2).arg(
-              y + s_XFigSymbolWidth / 2).arg(x - s_XFigSymbolWidth / 2).arg(
-              y - s_XFigSymbolWidth / 2).arg(x + s_XFigSymbolWidth / 2).arg(
+    s = QString::asprintf("    %d %d %d %d %d %d %d %d %d %d\n",
+              x + s_XFigSymbolWidth / 2,
+              y - s_XFigSymbolWidth / 2, x + s_XFigSymbolWidth / 2,
+              y + s_XFigSymbolWidth / 2, x - s_XFigSymbolWidth / 2,
+              y + s_XFigSymbolWidth / 2, x - s_XFigSymbolWidth / 2,
+              y - s_XFigSymbolWidth / 2, x + s_XFigSymbolWidth / 2,
               y - s_XFigSymbolWidth / 2);
     s_XFigStream << s;
 }
@@ -133,12 +134,13 @@ static void xfig_print_diamond(int x, int y, int color)
     // sub-type = 3 (polygon)
 
     QString s;
-    s = QString("2 3 0 1 %d %d -1 0 46 0.0 0 0 0 0 0 5\n").arg(color).arg(color);
+    s = QString::asprintf("2 3 0 1 %d %d -1 0 46 0.0 0 0 0 0 0 5\n", color, color);
     s_XFigStream << s;
-    s = QString("    %d %d %d %d %d %d %d %d %d %d\n").arg(x).
-              arg(y - s_XFigSymbolWidth * 13 / 20).arg(x + s_XFigSymbolWidth * 13 / 20).
-              arg(y).arg(x).arg(y + s_XFigSymbolWidth * 13 / 20).
-              arg(x - s_XFigSymbolWidth * 13 / 20).arg(y).arg(x).arg(
+    s = QString::asprintf("    %d %d %d %d %d %d %d %d %d %d\n",
+              x,
+              y - s_XFigSymbolWidth * 13 / 20, x + s_XFigSymbolWidth * 13 / 20,
+              y, x, y + s_XFigSymbolWidth * 13 / 20,
+              x - s_XFigSymbolWidth * 13 / 20, y, x,
               y - s_XFigSymbolWidth * 13 / 20);
     s_XFigStream << s;
 }
@@ -164,12 +166,14 @@ static void xfig_print_triangle(int x, int y, int color)
     // sub-type = 3 (polygon)
 
     QString s;
-    s = QString("2 3 0 1 %d %d -1 0 46 0.0 0 0 0 0 0 4\n").arg(color).arg(color);
+    s = QString::asprintf("2 3 0 1 %d %d -1 0 46 0.0 0 0 0 0 0 4\n", color, color);
     s_XFigStream << s;
-    s = QString("    %d %d %d %d %d %d %d %d\n").arg(x + s_XFigSymbolWidth * 12 / 20).
-              arg(y + s_XFigSymbolWidth * 12 / 20).arg(x).
-              arg(y - s_XFigSymbolWidth * 12 / 20).arg(x - s_XFigSymbolWidth * 12 / 20).
-              arg(y + s_XFigSymbolWidth * 12 / 20).arg(x + s_XFigSymbolWidth * 12 / 20);
+    s = QString::asprintf("    %d %d %d %d %d %d %d %d\n",
+              x + s_XFigSymbolWidth * 12 / 20,
+              y + s_XFigSymbolWidth * 12 / 20, x,
+              y - s_XFigSymbolWidth * 12 / 20, x - s_XFigSymbolWidth * 12 / 20,
+              y + s_XFigSymbolWidth * 12 / 20, x + s_XFigSymbolWidth * 12 / 20,
+              y + s_XFigSymbolWidth * 12 / 20);
     s_XFigStream << s;
 }
 
@@ -199,13 +203,13 @@ static void xfig_print_cross(int x, int y, int color)
     lw /= 20;
 
     QString s;
-    s = QString("2 1 0 %d %d 7 0 0 -1 0.0 0 0 0 0 0 2\n    %d %d %d %d\n").arg(lw).
-              arg(color).arg(x - s_XFigSymbolWidth / 2).arg(y - s_XFigSymbolWidth / 2).
-              arg(x + s_XFigSymbolWidth / 2).arg(y + s_XFigSymbolWidth / 2);
+    s = QString::asprintf("2 1 0 %d %d 7 0 0 -1 0.0 0 0 0 0 0 2\n    %d %d %d %d\n",
+              lw, color, x - s_XFigSymbolWidth / 2, y - s_XFigSymbolWidth / 2,
+              x + s_XFigSymbolWidth / 2, y + s_XFigSymbolWidth / 2);
     s_XFigStream << s;
-    s = QString("2 1 0 %d %d 7 0 0 -1 0.0 0 0 0 0 0 2\n    %d %d %d %d\n").arg(lw).
-              arg(color).arg(x + s_XFigSymbolWidth / 2).arg(y - s_XFigSymbolWidth / 2).
-              arg(x - s_XFigSymbolWidth / 2).arg(y + s_XFigSymbolWidth / 2);
+    s = QString::asprintf("2 1 0 %d %d 7 0 0 -1 0.0 0 0 0 0 0 2\n    %d %d %d %d\n",
+              lw, color, x + s_XFigSymbolWidth / 2, y - s_XFigSymbolWidth / 2,
+              x - s_XFigSymbolWidth / 2, y + s_XFigSymbolWidth / 2);
     s_XFigStream << s;
 }
 
@@ -310,11 +314,11 @@ static void xfig_print_elips(double x0, double y0, double a, double b,
         }
 
         QString s;
-        s = QString("1 1 %d %d %d %d 50 0 -1 %g 1 0.0 %d %d %d %d %d %d %d %d\n").arg(
-                  linestyle).arg(s_XFigLineWidth / 2).arg(printColorTable(color)).
-                  arg(printColorTable(color)).arg((float)styleval).arg((int)x0).arg((int)y0).
-                  arg((int)a).arg((int)b).arg((int)x0).arg((int)y0).arg(((int)x0) + ((int)a)).
-                  arg((int)y0);
+        s = QString::asprintf("1 1 %d %d %d %d 50 0 -1 %g 1 0.0 %d %d %d %d %d %d %d %d\n",
+                  linestyle, s_XFigLineWidth / 2, printColorTable(color),
+                  printColorTable(color), (float)styleval, (int)x0, (int)y0,
+                  (int)a, (int)b, (int)x0, (int)y0, ((int)x0) + ((int)a),
+                  (int)y0);
         s_XFigStream << s;
     } else {
         // ellipse is only partially visible, so emulate with polygon.
@@ -391,9 +395,9 @@ static void xfig_line_finish(void)
 
     if (s_XFigFile != nullptr) {
         QString s;
-        s = QString("2 1 0 %d %d 7 50 0 -1 0.0 0 1 -1 0 0 %d\n   ").arg(
-                  s_XFigLineWidth / 2).arg(s_xfig_line_color).
-                  arg(s_xfig_line_numpoints);
+        s = QString::asprintf("2 1 0 %d %d 7 50 0 -1 0.0 0 1 -1 0 0 %d\n   ",
+                  s_XFigLineWidth / 2, s_xfig_line_color,
+                  s_xfig_line_numpoints);
         s_XFigStream << s;
         for (i = 0; i < s_xfig_line_numpoints; i += 8) {
             k = 2 * (s_xfig_line_numpoints - i);
@@ -401,7 +405,7 @@ static void xfig_line_finish(void)
                 k = 16;
 
             for (j = 0; j < k; j++) {
-                s = QString(" %d").arg(s_xfig_line_points[2 * i + j]);
+                s = QString::asprintf(" %d", s_xfig_line_points[2 * i + j]);
                 s_XFigStream << s;
             }
 
@@ -468,9 +472,9 @@ static void xfig_print_point(double _x0, double _y0, int color)
     */
 
     QString s;
-    s = QString("1 3 0 1 %d %d 50 0 46 0.0 1 0.0 %d %d %d %d %d %d %d %d\n").arg(color).
-              arg(color).arg(x0).arg(y0).arg(s_XFigRealLineWidth / 2).arg(s_XFigRealLineWidth / 2).
-              arg(x0).arg(y0).arg(x0 + s_XFigRealLineWidth).arg(y0);
+    s = QString::asprintf("1 3 0 1 %d %d 50 0 46 0.0 1 0.0 %d %d %d %d %d %d %d %d\n",
+              color, color, x0, y0, s_XFigRealLineWidth / 2, s_XFigRealLineWidth / 2,
+              x0, y0, x0 + s_XFigRealLineWidth, y0);
     s_XFigStream << s;
 }
 
@@ -655,9 +659,9 @@ void prepareXFigPrinting(int w, int h, bool iszoom, bool isblackwhite,
                 npoints         5   (=5 points)
             */
             QString s;
-            s = QString("2 2 0 1 0 7 999 -1 0 0.0000000 0 0 0 0 0 5\n"
-                      "    %d %d %d %d %d %d %d %d %d %d\n").arg(
-                      0).arg(0).arg(s_XFigW).arg(0).arg(s_XFigW).arg(s_XFigH).arg(0).arg(s_XFigH).arg(0).arg(0);
+            s = QString::asprintf("2 2 0 1 0 7 999 -1 0 0.0000000 0 0 0 0 0 5\n"
+                      "    %d %d %d %d %d %d %d %d %d %d\n",
+                      0, 0, s_XFigW, 0, s_XFigW, s_XFigH, 0, s_XFigH, 0, 0);
             s_XFigStream << s;
         }
         if (g_VFResults.typeofview_ == TYPEOFVIEW_PLANE || iszoom) {
@@ -680,9 +684,9 @@ void prepareXFigPrinting(int w, int h, bool iszoom, bool isblackwhite,
                 npoints         5   (=5 points)
             */
             QString s;
-            s = QString("2 2 0 1 0 7 998 0 -1 0.0000000 0 0 0 0 0 5\n"
-                      "    %d %d %d %d %d %d %d %d %d %d\n").arg(
-                      0).arg(0).arg(s_XFigW).arg(0).arg(s_XFigW).arg(s_XFigH).arg(0).arg(s_XFigH).arg(0).arg(0);
+            s = QString::asprintf("2 2 0 1 0 7 998 0 -1 0.0000000 0 0 0 0 0 5\n"
+                      "    %d %d %d %d %d %d %d %d %d %d\n",
+                      0, 0, s_XFigW, 0, s_XFigW, s_XFigH, 0, s_XFigH, 0, 0);
             s_XFigStream << s;
         }
     }

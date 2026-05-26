@@ -115,7 +115,6 @@ QIsoclinesDlg::QIsoclinesDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(layout3);
     mainLayout_->addLayout(layout4);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
     // connections

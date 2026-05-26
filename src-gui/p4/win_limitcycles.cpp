@@ -123,7 +123,6 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(layout2);
     mainLayout_->addLayout(layout4);
 
-    mainLayout_->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout_);
 
     // connections
@@ -148,7 +147,7 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
 
     spin_numpoints_->setValue(selected_numpoints_);
     QString buf;
-    buf = QString("%g").arg((float)selected_grid_);
+    buf = QString::number(selected_grid_, 'g');
     edt_grid_->setText(buf);
 
     if (g_VFResults.first_lim_cycle_ == nullptr) {
@@ -164,13 +163,13 @@ void QLimitCyclesDlg::setSection(double x0, double y0, double x1, double y1)
     QString buf;
     QString bufx;
     QString bufy;
-    bufx = QString("%g").arg((float)x0);
-    bufy = QString("%g").arg((float)y0);
+    bufx = QString::number(x0, 'g');
+    bufy = QString::number(y0, 'g');
     edt_x0_->setText(bufx);
     edt_y0_->setText(bufy);
 
-    bufx = QString("%g").arg((float)x1);
-    bufy = QString("%g").arg((float)y1);
+    bufx = QString::number(x1, 'g');
+    bufy = QString::number(y1, 'g');
     edt_x1_->setText(bufx);
     edt_y1_->setText(bufy);
 }
@@ -290,7 +289,7 @@ void QLimitCyclesDlg::reset(void)
     edt_y1_->setText("");
 
     QString buf;
-    buf = QString("%g").arg((float)selected_grid_);
+    buf = QString::number(selected_grid_, 'g');
     edt_grid_->setText(buf);
     spin_numpoints_->setValue(selected_numpoints_);
 
