@@ -11,7 +11,18 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14   # Apple Silicon (ARM64) — matches the primary target hardware
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14    # Apple Silicon (ARM64)
+            arch: arm64
+            brew_prefix: /opt/homebrew
+          - runner: macos-13    # Intel (x86_64) — last Intel GitHub-hosted runner
+            arch: x86_64
+            brew_prefix: /usr/local
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       # ── Source ────────────────────────────────────────────────────────────
@@ -25,7 +36,7 @@ jobs:
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Configure with qmake
         run: |
-          export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+          export PATH="${{ matrix.brew_prefix }}/opt/qt/bin:$PATH"
           qmake -r P4.pro
 
       - name: Compile
@@ -37,7 +48,7 @@ jobs:
       # then place the helper binaries alongside p4 inside Contents/MacOS/.
       - name: Wrap in .app and deploy Qt frameworks
         run: |
-          export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+          export PATH="${{ matrix.brew_prefix }}/opt/qt/bin:$PATH"
 
           mkdir -p P4.app/Contents/MacOS
           cp build/p4/p4 P4.app/Contents/MacOS/
@@ -52,8 +63,8 @@ jobs:
             <key>CFBundleIdentifier</key>     <string>cat.gsd.p4</string>
             <key>CFBundleName</key>           <string>P4</string>
             <key>CFBundleDisplayName</key>    <string>P4</string>
-            <key>CFBundleVersion</key>        <string>7.0.1</string>
-            <key>CFBundleShortVersionString</key> <string>7.0.1</string>
+            <key>CFBundleVersion</key>        <string>7.1.0</string>
+            <key>CFBundleShortVersionString</key> <string>7.1.0</string>
             <key>CFBundlePackageType</key>    <string>APPL</string>
             <key>LSMinimumSystemVersion</key> <string>12.0</string>
             <key>NSHighResolutionCapable</key><true/>
@@ -82,15 +93,15 @@ jobs:
             --icon "P4.app" 180 160 \
             --app-drop-link 360 160 \
             --hide-extension "P4.app" \
-            P4-macOS-arm64.dmg \
+            P4-macOS-${{ matrix.arch }}.dmg \
             P4.app
 
       # ── Artifacts ─────────────────────────────────────────────────────────
       - name: Upload DMG as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: P4-macOS-arm64
-          path: P4-macOS-arm64.dmg
+          name: P4-macOS-${{ matrix.arch }}
+          path: P4-macOS-${{ matrix.arch }}.dmg
           retention-days: 30
 
       # On a version tag (v1.2.3), attach the DMG to a GitHub Release
@@ -98,4 +109,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: P4-macOS-arm64.dmg
+          files: P4-macOS-${{ matrix.arch }}.dmg
