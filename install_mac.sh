@@ -175,3 +175,83 @@ printf "${BGREEN}${BOLD}======================================${NC}\n"
 printf "${BGREEN}${BOLD}  P4 installed -> %s/${NC}\n" "$INSTALL_DIR"
 printf "${BGREEN}${BOLD}  p4  lyapunov  lyapunov_mpf  separatrice${NC}\n"
 printf "${BGREEN}${BOLD}======================================${NC}\n\n"
+
+# ---------------------------------------------------------------------------
+# Optional: build a .app bundle + DMG, same as the GitHub Actions workflow
+# ---------------------------------------------------------------------------
+read -rp "Create a .app bundle and DMG (like the GitHub Actions build)? [y/N] " MAKE_APP
+if [[ "$MAKE_APP" =~ ^[Yy]$ ]]; then
+    echo
+    printf "${BCYAN}${BOLD}[ Optional ]  Creating .app bundle and DMG${NC}\n"
+
+    VERSION="$(sed -n 's/#define VERSION "\(.*\)"/\1/p' "$SCRIPT_DIR/src-gui/version.h")"
+    APP_DIR="$SCRIPT_DIR/P4.app"
+
+    spinner_start "Assembling P4.app"
+    rm -rf "$APP_DIR"
+    mkdir -p "$APP_DIR/Contents/MacOS"
+    cp "$BUILD_DIR/p4/p4" "$APP_DIR/Contents/MacOS/"
+
+    cat > "$APP_DIR/Contents/Info.plist" << PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>     <string>p4</string>
+  <key>CFBundleIdentifier</key>     <string>cat.gsd.p4</string>
+  <key>CFBundleName</key>           <string>P4</string>
+  <key>CFBundleDisplayName</key>    <string>P4</string>
+  <key>CFBundleVersion</key>        <string>$VERSION</string>
+  <key>CFBundleShortVersionString</key> <string>$VERSION</string>
+  <key>CFBundlePackageType</key>    <string>APPL</string>
+  <key>LSMinimumSystemVersion</key> <string>12.0</string>
+  <key>NSHighResolutionCapable</key><true/>
+</dict>
+</plist>
+PLIST
+    ok "P4.app assembled"
+
+    if [[ -x "$MACDEPLOYQT" ]]; then
+        spinner_start "Running macdeployqt on P4.app"
+        "$MACDEPLOYQT" "$APP_DIR" >"$BUILD_DIR/macdeployqt_app.log" 2>&1 || true
+        ok "Qt frameworks bundled into P4.app"
+    fi
+
+    spinner_start "Copying helper binaries into P4.app"
+    cp "$BUILD_DIR/lyapunov/lyapunov" \
+       "$BUILD_DIR/lyapunov_mpf/lyapunov_mpf" \
+       "$BUILD_DIR/separatrice/separatrice" \
+       "$APP_DIR/Contents/MacOS/"
+    ok "Helper binaries copied"
+
+    if ! command -v create-dmg &>/dev/null; then
+        spinner_start "Installing create-dmg"
+        brew install create-dmg >>"$SCRIPT_DIR/brew_install.log" 2>&1 \
+            || die "Failed to install create-dmg -- see brew_install.log"
+        ok "create-dmg installed"
+    fi
+
+    DMG_NAME="P4-macOS-$ARCH.dmg"
+    spinner_start "Creating $DMG_NAME"
+    rm -f "$SCRIPT_DIR/$DMG_NAME"
+    create-dmg \
+        --volname "P4" \
+        --volicon "$SCRIPT_DIR/help/p4smallicon.png" \
+        --window-size 540 360 \
+        --icon-size 128 \
+        --icon "P4.app" 180 160 \
+        --app-drop-link 360 160 \
+        --hide-extension "P4.app" \
+        "$SCRIPT_DIR/$DMG_NAME" \
+        "$APP_DIR" \
+        >"$BUILD_DIR/create-dmg.log" 2>&1 \
+        || die "create-dmg failed -- see build/create-dmg.log"
+    ok "DMG created -> $DMG_NAME"
+
+    echo
+    printf "${BGREEN}${BOLD}======================================${NC}\n"
+    printf "${BGREEN}${BOLD}  P4.app -> %s/${NC}\n" "$APP_DIR"
+    printf "${BGREEN}${BOLD}  DMG    -> %s/%s${NC}\n" "$SCRIPT_DIR" "$DMG_NAME"
+    printf "${BGREEN}${BOLD}======================================${NC}\n\n"
+fi
