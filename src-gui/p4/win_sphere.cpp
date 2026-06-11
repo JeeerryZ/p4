@@ -36,7 +36,9 @@
 #include "print_postscript.h"
 #include "print_xfig.h"
 #include "win_event.h"
+#include "win_plot.h"
 #include "win_print.h"
+#include "win_zoom.h"
 
 #include <QMessageBox>
 
@@ -677,6 +679,20 @@ void QWinSphere::resizeEvent(QResizeEvent *e)
         return;
 
     adjustToNewSize();
+
+    // The sphere can also be resized by internal layout redistribution
+    // (e.g. the control dock claiming more width than initially assumed,
+    // which happens on platforms with larger default widget/font metrics)
+    // without the top-level window itself being resized. In that case the
+    // window's own resize->adjustHeight convergence loop never re-fires,
+    // leaving the sphere with the wrong aspect ratio. Detect that here and
+    // ask the parent window to re-converge.
+    if (idealh_ != h_) {
+        if (auto *pw = qobject_cast<QPlotWnd *>(parentWnd_))
+            QTimer::singleShot(0, pw, &QPlotWnd::adjustHeight);
+        else if (auto *zw = qobject_cast<QZoomWnd *>(parentWnd_))
+            QTimer::singleShot(0, zw, &QZoomWnd::adjustHeight);
+    }
 }
 
 void QWinSphere::paintEvent(QPaintEvent *p)
