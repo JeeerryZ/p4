@@ -214,8 +214,10 @@ void QStartDlg::onLoadSignal()
     QSettings settings(g_ThisVF->getbarefilename().append(".conf"),
                        QSettings::NativeFormat);
     settings.beginGroup("QStartDlg");
-    resize(settings.value("size").toSize());
-    move(settings.value("pos").toPoint());
+    if (settings.contains("size"))
+        resize(settings.value("size").toSize());
+    if (settings.contains("pos"))
+        move(settings.value("pos").toPoint());
     if (settings.value("plotWindow").toBool()) {
         if (plotWindow_ != nullptr)
             plotWindow_->show();
@@ -518,8 +520,11 @@ void QStartDlg::updateRecentFilesMenu()
 void QStartDlg::onRecentFile()
 {
     QAction *act = qobject_cast<QAction *>(sender());
-    if (act)
+    if (act) {
         edt_name_->setText(act->data().toString());
+        if (findWindow_ != nullptr)
+            findWindow_->onBtnLoad();
+    }
 }
 
 void QStartDlg::onBrowse()
@@ -534,6 +539,8 @@ void QStartDlg::onBrowse()
     if (!(result.isNull())) {
         edt_name_->setText(result);
         addToRecentFiles(result);
+        if (findWindow_ != nullptr)
+            findWindow_->onBtnLoad();
     }
 }
 
