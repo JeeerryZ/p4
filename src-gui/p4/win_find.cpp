@@ -29,6 +29,7 @@
 
 #include <QButtonGroup>
 #include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QLabel>
 #include <QMessageBox>
@@ -449,6 +450,22 @@ void QFindDlg::onBtnSave()
                                           "Please specify vector field.\n");
         return;
     }
+
+    QString startPath = g_ThisVF->filename_.trimmed();
+    if (startPath.isEmpty() || startPath == DEFAULTFILENAME)
+        startPath = QDir::homePath();
+
+    QString newFile = QFileDialog::getSaveFileName(
+        this, "Save vector field as...", startPath,
+        "Vector Field files (*.inp);;All Files (*.*)");
+    if (newFile.isNull())
+        return;
+
+    if (g_p4stardlg != nullptr)
+        g_p4stardlg->setFilenameField(newFile);
+    else
+        g_ThisVF->filename_ = newFile;
+
     if (g_ThisVF->save() == false) {
         QMessageBox::critical(
             this, "P4", "Unable to save the input vector field.\n"

@@ -93,6 +93,10 @@ class QStartDlg : public QWidget
     void onLoadSignal();
     void onRecentFile();
 
+    // updates the filename field (and g_ThisVF->filename_ via
+    // onFilenameChange) after a "Save As"-style file dialog
+    void setFilenameField(const QString &fname);
+
   private:
     QBoxLayout *mainLayout_;
     QPushButton *btn_quit_;

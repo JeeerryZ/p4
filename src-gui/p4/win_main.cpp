@@ -346,6 +346,12 @@ void QStartDlg::onFilenameChange(const QString &fname)
     g_ThisVF->filename_ = fname;
 }
 
+void QStartDlg::setFilenameField(const QString &fname)
+{
+    edt_name_->setText(fname); // also triggers onFilenameChange()
+    addToRecentFiles(fname);
+}
+
 void QStartDlg::signalEvaluating()
 {
     // disable view button, disable plot button:

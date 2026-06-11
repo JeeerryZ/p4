@@ -189,7 +189,7 @@ if [[ "$MAKE_APP" =~ ^[Yy]$ ]]; then
 
     spinner_start "Assembling P4.app"
     rm -rf "$APP_DIR"
-    mkdir -p "$APP_DIR/Contents/MacOS"
+    mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
     cp "$BUILD_DIR/p4/p4" "$APP_DIR/Contents/MacOS/"
 
     cat > "$APP_DIR/Contents/Info.plist" << PLIST
@@ -205,12 +205,32 @@ if [[ "$MAKE_APP" =~ ^[Yy]$ ]]; then
   <key>CFBundleVersion</key>        <string>$VERSION</string>
   <key>CFBundleShortVersionString</key> <string>$VERSION</string>
   <key>CFBundlePackageType</key>    <string>APPL</string>
+  <key>CFBundleIconFile</key>       <string>P4.icns</string>
   <key>LSMinimumSystemVersion</key> <string>12.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
 PLIST
     ok "P4.app assembled"
+
+    spinner_start "Generating P4.icns from newp4icon.ico"
+    ICONSET="$BUILD_DIR/P4.iconset"
+    rm -rf "$ICONSET"
+    mkdir -p "$ICONSET"
+    ICON_SRC_PNG="$BUILD_DIR/p4icon_src.png"
+    sips -s format png "$SCRIPT_DIR/help/newp4icon.ico" --out "$ICON_SRC_PNG" >/dev/null 2>&1
+    if [[ -f "$ICON_SRC_PNG" ]]; then
+        for sz in 16 32 128 256 512; do
+            sips -z "$sz" "$sz" "$ICON_SRC_PNG" \
+                --out "$ICONSET/icon_${sz}x${sz}.png" >/dev/null 2>&1
+            sips -z $((sz*2)) $((sz*2)) "$ICON_SRC_PNG" \
+                --out "$ICONSET/icon_${sz}x${sz}@2x.png" >/dev/null 2>&1
+        done
+        iconutil -c icns "$ICONSET" -o "$APP_DIR/Contents/Resources/P4.icns"
+        ok "P4.icns generated"
+    else
+        fail "Could not convert newp4icon.ico -- P4.app will use the default icon"
+    fi
 
     if [[ -x "$MACDEPLOYQT" ]]; then
         spinner_start "Running macdeployqt on P4.app"
