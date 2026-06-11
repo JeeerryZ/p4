@@ -179,9 +179,10 @@ void QOrbitsDlg::onBtnBackwards(void)
 
         if (g_VFResults.current_orbit_ != nullptr) {
             orbitStarted_ = true;
+            orbitSelected_ = true;
             btnDelAll_->setEnabled(true);
             btnDelLast_->setEnabled(true);
-            btnBackwards_->setEnabled(false);
+            btnForwards_->setEnabled(true);
             btnContinue_->setEnabled(true);
         }
         return;
@@ -219,9 +220,10 @@ void QOrbitsDlg::onBtnForwards(void)
 
         if (g_VFResults.current_orbit_ != nullptr) {
             orbitStarted_ = true;
+            orbitSelected_ = true;
             btnDelAll_->setEnabled(true);
             btnDelLast_->setEnabled(true);
-            btnForwards_->setEnabled(false);
+            btnBackwards_->setEnabled(true);
             btnContinue_->setEnabled(true);
         }
         return;

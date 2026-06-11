@@ -72,13 +72,10 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     edt_name_->setSelection(0, strlen(DEFAULTFILENAME));
     edt_name_->setCursorPosition(strlen(DEFAULTFILENAME));
 
-    btn_browse_ = new QToolButton(this);
-    btn_browse_->setText("&Browse");
-    btn_browse_->setToolButtonStyle(Qt::ToolButtonTextOnly);
-    btn_browse_->setPopupMode(QToolButton::MenuButtonPopup);
+    btn_browse_ = new QPushButton("&Browse", this);
+    btn_browse_->setContextMenuPolicy(Qt::CustomContextMenu);
 
     recentMenu_ = new QMenu("Recent Files", this);
-    btn_browse_->setMenu(recentMenu_);
     updateRecentFilesMenu();
 
 #ifdef TOOLTIPS
@@ -89,7 +86,9 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     btn_help_->setToolTip("Shows extensive help on the use of P4");
     edt_name_->setToolTip("Enter the filename of the vector field here.\n"
                           "You do not need to add the extension (.inp).\n");
-    btn_browse_->setToolTip("Search for vector field files on your system");
+    btn_browse_->setToolTip(
+        "Search for vector field files on your system\n"
+        "(right-click for recent files)");
     btn_about_->setToolTip("Displays information about the program P4, its "
                            "version and main settings");
 #endif
@@ -136,7 +135,11 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     connect(btn_plot_, &QPushButton::clicked, this, &QStartDlg::onPlot);
     connect(btn_help_, &QPushButton::clicked, this, &QStartDlg::onHelp);
     connect(btn_about_, &QPushButton::clicked, this, &QStartDlg::onAbout);
-    connect(btn_browse_, &QToolButton::clicked, this, &QStartDlg::onBrowse);
+    connect(btn_browse_, &QPushButton::clicked, this, &QStartDlg::onBrowse);
+    connect(btn_browse_, &QPushButton::customContextMenuRequested, this,
+            [this](const QPoint &pos) {
+                recentMenu_->exec(btn_browse_->mapToGlobal(pos));
+            });
     connect(edt_name_, &QLineEdit::textChanged, this,
             &QStartDlg::onFilenameChange);
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QStartDlg::onSaveSignal);
