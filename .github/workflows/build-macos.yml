@@ -50,7 +50,7 @@ jobs:
         run: |
           export PATH="${{ matrix.brew_prefix }}/opt/qt/bin:$PATH"
 
-          mkdir -p P4.app/Contents/MacOS
+          mkdir -p P4.app/Contents/MacOS P4.app/Contents/Resources
           cp build/p4/p4 P4.app/Contents/MacOS/
 
           cat > P4.app/Contents/Info.plist << 'PLIST'
@@ -66,11 +66,23 @@ jobs:
             <key>CFBundleVersion</key>        <string>7.1.0</string>
             <key>CFBundleShortVersionString</key> <string>7.1.0</string>
             <key>CFBundlePackageType</key>    <string>APPL</string>
+            <key>CFBundleIconFile</key>       <string>P4.icns</string>
             <key>LSMinimumSystemVersion</key> <string>12.0</string>
             <key>NSHighResolutionCapable</key><true/>
           </dict>
           </plist>
           PLIST
+
+          # Generate P4.icns from help/newp4icon.ico
+          ICONSET="P4.iconset"
+          rm -rf "$ICONSET"
+          mkdir -p "$ICONSET"
+          sips -s format png help/newp4icon.ico --out p4icon_src.png
+          for sz in 16 32 128 256 512; do
+              sips -z "$sz" "$sz" p4icon_src.png --out "$ICONSET/icon_${sz}x${sz}.png"
+              sips -z $((sz*2)) $((sz*2)) p4icon_src.png --out "$ICONSET/icon_${sz}x${sz}@2x.png"
+          done
+          iconutil -c icns "$ICONSET" -o P4.app/Contents/Resources/P4.icns
 
           macdeployqt P4.app
 
