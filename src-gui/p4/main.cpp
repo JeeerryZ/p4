@@ -33,7 +33,9 @@
 #include "../version.h"
 #endif
 
+#include <QDir>
 #include <QMessageBox>
+#include <QStandardPaths>
 
 /*
     ----------------------------------------------------------------------------
@@ -138,6 +140,21 @@ int main(int argc, char *argv[])
     g_p4app->addLibraryPath(g_p4app->applicationDirPath());
 
     g_p4app->setQuitOnLastWindowClosed(false);
+
+    // GUI apps can be launched with an arbitrary (sometimes read-only)
+    // current directory -- e.g. "/" when double-clicking a macOS .app
+    // bundle from Finder. Vector-field files and Maple's result/table
+    // files are written using paths relative to the current directory
+    // (e.g. "untitled_vec.tab"), so start out in a writable, sensible
+    // default location.
+    {
+        QString docs =
+            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        if (!docs.isEmpty() && QDir(docs).exists())
+            QDir::setCurrent(docs);
+        else
+            QDir::setCurrent(QDir::homePath());
+    }
 
     // Extract bundled Maple scripts to a writable location before any
     // evaluation can happen.  No-op if already up-to-date for this version.

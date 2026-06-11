@@ -72,7 +72,10 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     edt_name_->setSelection(0, strlen(DEFAULTFILENAME));
     edt_name_->setCursorPosition(strlen(DEFAULTFILENAME));
 
-    btn_browse_ = new QPushButton("&Browse", this);
+    btn_browse_ = new QToolButton(this);
+    btn_browse_->setText("&Browse");
+    btn_browse_->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    btn_browse_->setPopupMode(QToolButton::MenuButtonPopup);
 
     recentMenu_ = new QMenu("Recent Files", this);
     btn_browse_->setMenu(recentMenu_);
@@ -133,7 +136,7 @@ QStartDlg::QStartDlg(const QString &autofilename) : QWidget()
     connect(btn_plot_, &QPushButton::clicked, this, &QStartDlg::onPlot);
     connect(btn_help_, &QPushButton::clicked, this, &QStartDlg::onHelp);
     connect(btn_about_, &QPushButton::clicked, this, &QStartDlg::onAbout);
-    connect(btn_browse_, &QPushButton::clicked, this, &QStartDlg::onBrowse);
+    connect(btn_browse_, &QToolButton::clicked, this, &QStartDlg::onBrowse);
     connect(edt_name_, &QLineEdit::textChanged, this,
             &QStartDlg::onFilenameChange);
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QStartDlg::onSaveSignal);
