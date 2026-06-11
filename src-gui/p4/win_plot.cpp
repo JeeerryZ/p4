@@ -36,10 +36,12 @@
 #include "win_zoom.h"
 
 #include <QDockWidget>
+#include <QGuiApplication>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPrintDialog>
 #include <QResizeEvent>
+#include <QScreen>
 #include <QSettings>
 #include <QTabWidget>
 #include <QTimer>
@@ -231,7 +233,19 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
 
     sphere_->show();
     setCentralWidget(sphere_);
-    resize(NOMINALWIDTHPLOTWINDOW + controlDock_->minimumWidth(), NOMINALWIDTHPLOTWINDOW);
+
+    // Size the sphere relative to the available screen space so that the
+    // plot window isn't tiny on high-resolution / large displays, while
+    // never going below the original nominal size on small screens.
+    int sphereSize = NOMINALWIDTHPLOTWINDOW;
+    if (QScreen *screen = this->screen() ? this->screen()
+                                          : QGuiApplication::primaryScreen()) {
+        QRect avail = screen->availableGeometry();
+        int maxSphere = qMin(avail.width() - controlDock_->minimumWidth(),
+                              avail.height());
+        sphereSize = qMax(NOMINALWIDTHPLOTWINDOW, maxSphere * 7 / 10);
+    }
+    resize(sphereSize + controlDock_->minimumWidth(), sphereSize);
 
     intParamsWindow_->updateDlgData();
     viewParamsWindow_->updateDlgData();
