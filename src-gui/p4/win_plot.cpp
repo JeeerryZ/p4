@@ -258,6 +258,13 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
 
 QPlotWnd::~QPlotWnd()
 {
+    // undoStack_ is a child QObject and will be destroyed by ~QWidget()'s
+    // deleteChildren(), after this destructor body has already deleted and
+    // nulled out the dialog pointers below. ~QUndoStack() calls clear(),
+    // which would emit indexChanged and run the lambda below on those
+    // now-dangling pointers. Disconnect it now to avoid that.
+    disconnect(undoStack_, &QUndoStack::indexChanged, this, nullptr);
+
     zoomWindows_.clear();
     numZooms_ = 0;
 
