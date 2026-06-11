@@ -575,13 +575,6 @@ void QFindDlg::signalEvaluating()
     btn_terminate_->show();
     progressBar_->show();
     logArea_->clear();
-    // Auto-expand log when evaluation starts
-    if (!logArea_->isVisible()) {
-        logArea_->show();
-        btn_clearLog_->show();
-        btn_copyLog_->show();
-        btn_toggleLog_->setText("▼ Maple Log");
-    }
 }
 
 void QFindDlg::signalEvaluated()

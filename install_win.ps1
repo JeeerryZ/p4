@@ -58,6 +58,12 @@ Set-Location $Root
 if ($LASTEXITCODE -ne 0) { Write-Fail "qmake failed" }
 Write-Ok "qmake configured"
 
+# windres only depends on p4.rc, not the .ico files it references, so an
+# icon-only change wouldn't otherwise trigger a rebuild of the embedded
+# resource. Force it by removing any stale compiled resource object.
+Remove-Item -Force -ErrorAction SilentlyContinue `
+    "$Root\src-gui\p4\release\p4_res.o", "$Root\src-gui\p4\debug\p4_res.o"
+
 $Jobs = [Environment]::ProcessorCount
 Write-Step "Compiling ($Jobs jobs)"
 $buildLog = "$BuildDir\make.log"
