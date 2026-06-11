@@ -29,6 +29,7 @@
 #include <QPushButton>
 #include <QString>
 #include <QStringList>
+#include <QToolButton>
 #include <QWidget>
 
 #define TYPE_SIGNAL_EVALUATING (QEvent::User + 1)
@@ -101,7 +102,7 @@ class QStartDlg : public QWidget
     QPushButton *btn_plot_;
     QPushButton *btn_help_;
     QPushButton *btn_about_;
-    QPushButton *btn_browse_;
+    QToolButton *btn_browse_;
     QLineEdit *edt_name_;
     QMenu *viewMenu_;
     QMenu *recentMenu_;

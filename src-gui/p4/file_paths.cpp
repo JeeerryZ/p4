@@ -23,6 +23,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QSettings>
+#include <QStandardPaths>
 
 QByteArray Win_GetLongPathName(QByteArray);
 QByteArray Win_GetShortPathName(QByteArray);
@@ -84,6 +85,13 @@ QString getDefaultP4Path(void)
 // what to do???
 #ifdef Q_OS_WIN
             f = "C:\\Program Files\\P4"; // return Windows default path
+#elif defined(Q_OS_MAC)
+            // running from a P4.app bundle (executable sits in
+            // Contents/MacOS, not a "bin" directory). /usr/local/p4 is
+            // not guaranteed to exist or be writable, so fall back to a
+            // per-user, writable location instead.
+            f = QStandardPaths::writableLocation(
+                QStandardPaths::AppLocalDataLocation);
 #else
             f = "/usr/local/p4"; // return Linux default path
 #endif
