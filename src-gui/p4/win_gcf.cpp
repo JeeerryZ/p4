@@ -24,9 +24,11 @@
 #include "math_gcf.h"
 
 #include <QButtonGroup>
+#include <QFrame>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSpinBox>
+#include <QStyle>
 
 QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint)
@@ -57,6 +59,9 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     btn_evaluate_ = new QPushButton("&Evaluate", this);
     btn_defaults_ = new QPushButton("Defaults", this);
 
+    btn_evaluate_->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+    btn_defaults_->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
+
 #ifdef TOOLTIPS
     btn_dots_->setToolTip(
         "Plot individual points of the curve of singularities");
@@ -71,11 +76,14 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     QHBoxLayout *layout1 = new QHBoxLayout();
     layout1->addWidget(lbl1);
     layout1->addWidget(btn_dots_);
     layout1->addWidget(btn_dashes_);
+    layout1->addStretch(0);
 
     QGridLayout *lay00 = new QGridLayout();
     lay00->addWidget(lbl2, 0, 0);
@@ -85,6 +93,10 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
     lay00->addWidget(lbl4, 2, 0);
     lay00->addWidget(edt_memory_, 2, 1);
 
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
+
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addStretch(0);
     layout2->addWidget(btn_evaluate_);
@@ -93,7 +105,9 @@ QGcfDlg::QGcfDlg(QPlotWnd *plt, QWinSphere *sp)
 
     mainLayout_->addLayout(layout1);
     mainLayout_->addLayout(lay00);
+    mainLayout_->addWidget(sep1);
     mainLayout_->addLayout(layout2);
+    mainLayout_->addStretch(0);
 
     setLayout(mainLayout_);
 

@@ -23,6 +23,9 @@
 #include "math_orbits.h"
 #include "p4_undo.h"
 
+#include <QFrame>
+#include <QStyle>
+
 QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint)
 {
@@ -32,9 +35,11 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     plotwnd_ = plt;
 
     edt_x0_ = new QLineEdit("", this);
+    edt_x0_->setMaximumWidth(100);
     QLabel *lbl1 = new QLabel("&x0 = ", this);
     lbl1->setBuddy(edt_x0_);
     edt_y0_ = new QLineEdit("", this);
+    edt_y0_->setMaximumWidth(100);
     QLabel *lbl2 = new QLabel("&y0 = ", this);
     lbl2->setBuddy(edt_y0_);
 
@@ -45,6 +50,13 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     btnBackwards_ = new QPushButton("&Backwards", this);
     btnDelLast_ = new QPushButton("&Delete Last Orbit", this);
     btnDelAll_ = new QPushButton("Delete &All Orbits", this);
+
+    btnSelect_->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+    btnForwards_->setIcon(style()->standardIcon(QStyle::SP_ArrowRight));
+    btnBackwards_->setIcon(style()->standardIcon(QStyle::SP_ArrowLeft));
+    btnContinue_->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    btnDelLast_->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    btnDelAll_->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
 
 #ifdef TOOLTIPS
     edt_x0_->setToolTip(
@@ -66,6 +78,8 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     QGridLayout *lay00 = new QGridLayout();
     lay00->addWidget(lbl1, 0, 0);
@@ -80,6 +94,10 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
     layout1->addWidget(btnBackwards_);
     layout1->addStretch(0);
 
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
+
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addWidget(btnDelLast_);
     layout2->addWidget(btnDelAll_);
@@ -87,7 +105,9 @@ QOrbitsDlg::QOrbitsDlg(QPlotWnd *plt, QWinSphere *sp)
 
     mainLayout_->addLayout(lay00);
     mainLayout_->addLayout(layout1);
+    mainLayout_->addWidget(sep1);
     mainLayout_->addLayout(layout2);
+    mainLayout_->addStretch(0);
 
     setLayout(mainLayout_);
 

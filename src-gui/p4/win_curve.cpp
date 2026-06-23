@@ -25,15 +25,18 @@
 #include "math_polynom.h"
 
 #include <QButtonGroup>
+#include <QFrame>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSpinBox>
+#include <QStyle>
 
 QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     : QWidget(nullptr, Qt::Tool | Qt::WindowStaysOnTopHint), mainSphere_(sp),
       plotwnd_(plt)
 {
     edt_curve_ = new QLineEdit("", this);
+    edt_curve_->setMaximumWidth(160);
     QLabel *lbl0 = new QLabel("Curve: ", this);
 
     QButtonGroup *btngrp = new QButtonGroup(this);
@@ -61,6 +64,12 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     btnDelAll_ = new QPushButton("Delete &All Curves", this);
     btnDefaults_ = new QPushButton("Defaults", this);
 
+    btnEvaluate_->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+    btnPlot_->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    btnDelLast_->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    btnDelAll_->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
+    btnDefaults_->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
+
 #ifdef TOOLTIPS
     btn_dots_->setToolTip("Plot individual points of the curve");
     btn_dashes_->setToolTip(
@@ -75,11 +84,14 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
 
     // layout
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     QHBoxLayout *layout0 = new QHBoxLayout();
     layout0->addWidget(lbl1);
     layout0->addWidget(btn_dots_);
     layout0->addWidget(btn_dashes_);
+    layout0->addStretch(0);
 
     QGridLayout *layout1 = new QGridLayout();
     layout1->addWidget(lbl0, 0, 0);
@@ -90,6 +102,10 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
     layout1->addWidget(edt_precis_, 2, 1);
     layout1->addWidget(lbl4, 3, 0);
     layout1->addWidget(edt_memory_, 3, 1);
+
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
 
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addWidget(btnEvaluate_);
@@ -108,9 +124,11 @@ QCurveDlg::QCurveDlg(QPlotWnd *plt, QWinSphere *sp)
 
     mainLayout_->addLayout(layout0);
     mainLayout_->addLayout(layout1);
+    mainLayout_->addWidget(sep1);
     mainLayout_->addLayout(layout2);
     mainLayout_->addLayout(layout3);
     mainLayout_->addLayout(layout4);
+    mainLayout_->addStretch(0);
 
     setLayout(mainLayout_);
 

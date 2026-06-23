@@ -27,6 +27,8 @@
 #include "p4application.h"
 
 #include <QButtonGroup>
+#include <QFrame>
+#include <QStyle>
 
 QViewDlg::~QViewDlg() { getDataFromDlg(); }
 
@@ -57,24 +59,30 @@ QViewDlg::QViewDlg(QWidget *parent)
     QLabel *lbl_projection_ = new QLabel("Projection:", this);
     lbl_projection_->setFont(*(g_p4app->boldFont_));
     edt_projection_ = new QLineEdit("-1", this);
+    edt_projection_->setMaximumWidth(80);
 
     QLabel *lbl_x0_ = new QLabel("Min. x:", this);
     lbl_x0_->setFont(*(g_p4app->boldFont_));
     edt_x0_ = new QLineEdit("-1", this);
+    edt_x0_->setMaximumWidth(80);
 
     btn_square_ = new QPushButton("&Square", this);
+    btn_square_->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
 
     QLabel *lbl_y0_ = new QLabel("Min. y:", this);
     lbl_y0_->setFont(*(g_p4app->boldFont_));
     edt_y0_ = new QLineEdit("-1", this);
+    edt_y0_->setMaximumWidth(80);
 
     QLabel *lbl_x1_ = new QLabel("Max. x", this);
     lbl_x1_->setFont(*(g_p4app->boldFont_));
     edt_x1_ = new QLineEdit("1", this);
+    edt_x1_->setMaximumWidth(80);
 
     QLabel *lbl_y1_ = new QLabel("Max. y", this);
     lbl_y1_->setFont(*(g_p4app->boldFont_));
     edt_y1_ = new QLineEdit("1", this);
+    edt_y1_->setMaximumWidth(80);
 
 #ifdef TOOLTIPS
     btn_sphere_->setToolTip(
@@ -100,6 +108,8 @@ QViewDlg::QViewDlg(QWidget *parent)
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     mainLayout_->addWidget(p4title);
 
@@ -113,6 +123,11 @@ QViewDlg::QViewDlg(QWidget *parent)
     kindLayout->addWidget(btn_V2_, 2, 2);
 
     mainLayout_->addLayout(kindLayout);
+
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
+    mainLayout_->addWidget(sep1);
 
     QHBoxLayout *layout1 = new QHBoxLayout();
     layout1->addWidget(lbl_projection_);

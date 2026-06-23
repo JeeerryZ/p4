@@ -229,6 +229,7 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
                                QDockWidget::DockWidgetMovable);
     controlDock_->setWidget(controlTabs_);
     controlDock_->setMinimumWidth(240);
+    controlDock_->setMaximumWidth(320);
     addDockWidget(Qt::RightDockWidgetArea, controlDock_);
 
     sphere_->show();

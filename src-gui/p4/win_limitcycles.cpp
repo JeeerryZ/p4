@@ -24,8 +24,10 @@
 #include "math_limitcycles.h"
 #include "p4application.h"
 
+#include <QFrame>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QStyle>
 
 #include <cmath>
 
@@ -44,14 +46,19 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     plotwnd_ = plt;
 
     edt_x0_ = new QLineEdit("", this);
+    edt_x0_->setMaximumWidth(70);
     QLabel *lbl1 = new QLabel("x0 = ", this);
     edt_y0_ = new QLineEdit("", this);
+    edt_y0_->setMaximumWidth(70);
     QLabel *lbl2 = new QLabel("y0 = ", this);
     edt_x1_ = new QLineEdit("", this);
+    edt_x1_->setMaximumWidth(70);
     QLabel *lbl3 = new QLabel("x1 = ", this);
     edt_y1_ = new QLineEdit("", this);
+    edt_y1_->setMaximumWidth(70);
     QLabel *lbl4 = new QLabel("y1 = ", this);
     edt_grid_ = new QLineEdit("", this);
+    edt_grid_->setMaximumWidth(100);
     QLabel *lbl5 = new QLabel("Grid: ", this);
 
     spin_numpoints_ = new QSpinBox(this);
@@ -63,6 +70,11 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     btn_cancel_ = new QPushButton("&Reset setpoints", this);
     btn_dellast_ = new QPushButton("&Delete Last LC", this);
     btn_delall_ = new QPushButton("Delete &All LC", this);
+
+    btn_start_->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    btn_cancel_->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
+    btn_dellast_->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    btn_delall_->setIcon(style()->standardIcon(QStyle::SP_DialogResetButton));
 
 #ifdef TOOLTIPS
     edt_x0_->setToolTip(
@@ -90,6 +102,8 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     QGridLayout *lay00 = new QGridLayout();
     lay00->addWidget(lbl1, 0, 0);
@@ -104,14 +118,24 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     QHBoxLayout *layout1 = new QHBoxLayout();
     layout1->addWidget(lbl5);
     layout1->addWidget(edt_grid_);
+    layout1->addStretch(0);
+
+    QHBoxLayout *layout3 = new QHBoxLayout();
+    layout3->addWidget(lbl6);
+    layout3->addWidget(spin_numpoints_);
+    layout3->addStretch(0);
+
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
 
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addWidget(btn_start_);
     layout2->addWidget(btn_cancel_);
 
-    QHBoxLayout *layout3 = new QHBoxLayout();
-    layout3->addWidget(lbl6);
-    layout3->addWidget(spin_numpoints_);
+    QFrame *sep2 = new QFrame(this);
+    sep2->setFrameShape(QFrame::HLine);
+    sep2->setFrameShadow(QFrame::Sunken);
 
     QHBoxLayout *layout4 = new QHBoxLayout();
     layout4->addWidget(btn_dellast_);
@@ -120,8 +144,11 @@ QLimitCyclesDlg::QLimitCyclesDlg(QPlotWnd *plt, QWinSphere *sp)
     mainLayout_->addLayout(lay00);
     mainLayout_->addLayout(layout1);
     mainLayout_->addLayout(layout3);
+    mainLayout_->addWidget(sep1);
     mainLayout_->addLayout(layout2);
+    mainLayout_->addWidget(sep2);
     mainLayout_->addLayout(layout4);
+    mainLayout_->addStretch(0);
 
     setLayout(mainLayout_);
 

@@ -22,6 +22,9 @@
 #include "custom.h"
 #include "math_separatrice.h"
 
+#include <QFrame>
+#include <QStyle>
+
 QString g_CurrentSingularityInfo[4] = {"", "", "", ""};
 double g_CurrentSeparatriceEpsilon = 0;
 
@@ -38,7 +41,13 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     btn_intnext_ = new QPushButton("&Integrate next sep", this);
     btn_selectnext_ = new QPushButton("Select &Next sep", this);
 
+    btn_start_->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    btn_cont_->setIcon(style()->standardIcon(QStyle::SP_MediaSeekForward));
+    btn_intnext_->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
+    btn_selectnext_->setIcon(style()->standardIcon(QStyle::SP_ArrowForward));
+
     edt_epsilon_ = new QLineEdit("", this);
+    edt_epsilon_->setMaximumWidth(100);
     QLabel *lbl1 = new QLabel("&Epsilon = ", this);
     lbl1->setBuddy(edt_epsilon_);
 
@@ -50,6 +59,8 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     mainLayout_->addWidget(lbl_info_[0]);
     mainLayout_->addWidget(lbl_info_[1]);
@@ -59,6 +70,11 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     QHBoxLayout *layout3 = new QHBoxLayout();
     layout3->addWidget(lbl1);
     layout3->addWidget(edt_epsilon_);
+    layout3->addStretch(0);
+
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
 
     QHBoxLayout *layout4 = new QHBoxLayout();
     layout4->addWidget(btn_start_);
@@ -69,8 +85,10 @@ QSepDlg::QSepDlg(QPlotWnd *plt, QWinSphere *sp)
     layout5->addWidget(btn_selectnext_);
 
     mainLayout_->addLayout(layout3);
+    mainLayout_->addWidget(sep1);
     mainLayout_->addLayout(layout4);
     mainLayout_->addLayout(layout5);
+    mainLayout_->addStretch(0);
 
     setLayout(mainLayout_);
 
