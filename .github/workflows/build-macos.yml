@@ -44,6 +44,14 @@ jobs:
       - name: Compile
         run: ${{ matrix.arch_prefix }} make -j$(sysctl -n hw.logicalcpu)
 
+      - name: Verify build architecture
+        run: |
+          actual=$(lipo -archs build/p4/p4)
+          if [ "$actual" != "${{ matrix.arch }}" ]; then
+            echo "Expected ${{ matrix.arch }}, got: $actual"
+            exit 1
+          fi
+
       # ── Assemble .app bundle ──────────────────────────────────────────────
       # p4 is built as a plain Unix binary (CONFIG -= app_bundle in p4.pro).
       # We wrap it in a minimal .app so macdeployqt can bundle Qt frameworks,
