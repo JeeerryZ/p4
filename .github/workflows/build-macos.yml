@@ -15,12 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-14    # Apple Silicon (ARM64)
+          - runner: macos-14    # Apple Silicon (ARM64), native build
             arch: arm64
             brew_prefix: /opt/homebrew
-          - runner: macos-13    # Intel (x86_64) — last Intel GitHub-hosted runner
+            arch_prefix: ""
+          - runner: macos-14    # Intel (x86_64), cross-built via Rosetta 2
             arch: x86_64
             brew_prefix: /usr/local
+            arch_prefix: "arch -x86_64"
 
     runs-on: ${{ matrix.runner }}
 
@@ -31,16 +33,16 @@ jobs:
 
       # ── Dependencies ──────────────────────────────────────────────────────
       - name: Install dependencies
-        run: brew install qt gmp mpfr
+        run: ${{ matrix.arch_prefix }} brew install qt gmp mpfr
 
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Configure with qmake
         run: |
           export PATH="${{ matrix.brew_prefix }}/opt/qt/bin:$PATH"
-          qmake -r P4.pro
+          ${{ matrix.arch_prefix }} qmake -r P4.pro
 
       - name: Compile
-        run: make -j$(sysctl -n hw.logicalcpu)
+        run: ${{ matrix.arch_prefix }} make -j$(sysctl -n hw.logicalcpu)
 
       # ── Assemble .app bundle ──────────────────────────────────────────────
       # p4 is built as a plain Unix binary (CONFIG -= app_bundle in p4.pro).
@@ -84,7 +86,7 @@ jobs:
           done
           iconutil -c icns "$ICONSET" -o P4.app/Contents/Resources/P4.icns
 
-          macdeployqt P4.app
+          ${{ matrix.arch_prefix }} macdeployqt P4.app
 
           # Helper binaries must sit alongside p4 so applicationDirPath() finds them
           cp build/lyapunov/lyapunov \
@@ -95,9 +97,9 @@ jobs:
       # ── Create DMG ────────────────────────────────────────────────────────
       - name: Create DMG
         run: |
-          brew install create-dmg
+          ${{ matrix.arch_prefix }} brew install create-dmg
 
-          create-dmg \
+          ${{ matrix.arch_prefix }} create-dmg \
             --volname "P4" \
             --volicon "help/p4smallicon.png" \
             --window-size 540 360 \
