@@ -65,20 +65,26 @@ macx {
 }
 
 win32 {
-    # Probe common MSYS2 and Qt-bundled MinGW locations
-    exists(C:/msys64/mingw64/include/gmp.h) {
-        GMP_PREFIX = C:/msys64/mingw64
-    } else:exists(D:/msys64/mingw64/include/gmp.h) {
-        GMP_PREFIX = D:/msys64/mingw64
-    } else:exists(C:/Qt/Tools/mingw64/include/gmp.h) {
-        GMP_PREFIX = C:/Qt/Tools/mingw64
-    } else:exists(D:/Qt/Tools/mingw64/include/gmp.h) {
-        GMP_PREFIX = D:/Qt/Tools/mingw64
-    } else:exists(E:/Qt/Tools/mingw64/include/gmp.h) {
-        GMP_PREFIX = E:/Qt/Tools/mingw64
-    } else {
-        warning("GMP not found. Install via MSYS2: pacman -S mingw-w64-x86_64-gmp mingw-w64-x86_64-mpfr")
-        GMP_PREFIX =
+    # GMP_PREFIX may already be set via a qmake command-line variable
+    # (e.g. `qmake GMP_PREFIX=...`) — CI passes this explicitly because
+    # GitHub Actions' MSYS2 install path is dynamic (under a per-run temp
+    # directory), so none of the hardcoded local-dev paths below would match.
+    isEmpty(GMP_PREFIX) {
+        # Probe common MSYS2 and Qt-bundled MinGW locations
+        exists(C:/msys64/mingw64/include/gmp.h) {
+            GMP_PREFIX = C:/msys64/mingw64
+        } else:exists(D:/msys64/mingw64/include/gmp.h) {
+            GMP_PREFIX = D:/msys64/mingw64
+        } else:exists(C:/Qt/Tools/mingw64/include/gmp.h) {
+            GMP_PREFIX = C:/Qt/Tools/mingw64
+        } else:exists(D:/Qt/Tools/mingw64/include/gmp.h) {
+            GMP_PREFIX = D:/Qt/Tools/mingw64
+        } else:exists(E:/Qt/Tools/mingw64/include/gmp.h) {
+            GMP_PREFIX = E:/Qt/Tools/mingw64
+        } else {
+            warning("GMP not found. Install via MSYS2: pacman -S mingw-w64-x86_64-gmp mingw-w64-x86_64-mpfr")
+            GMP_PREFIX =
+        }
     }
     !isEmpty(GMP_PREFIX) {
         GMP_LIBS        = -L$$GMP_PREFIX/lib -lgmp
