@@ -29,7 +29,6 @@ jobs:
             mingw-w64-x86_64-gmp
             mingw-w64-x86_64-mpfr
             mingw-w64-x86_64-toolchain
-            make
 
       - name: Configure with qmake
         run: qmake -r P4.pro
@@ -49,7 +48,7 @@ jobs:
 
       - name: Zip distribution
         shell: pwsh
-        run: Compress-Archive -Path dist\* -DestinationPath P4-windows-x86_64.zip
+        run: Compress-Archive -Path dist/* -DestinationPath P4-windows-x86_64.zip
 
       - name: Upload zip as artifact
         uses: actions/upload-artifact@v4
