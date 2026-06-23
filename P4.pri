@@ -31,11 +31,23 @@ unix:!macx {
 }
 
 macx {
-    # Probe Homebrew: Apple Silicon (/opt/homebrew) before Intel (/usr/local)
-    exists(/opt/homebrew/include/gmp.h) {
-        GMP_PREFIX = /opt/homebrew
-    } else:exists(/usr/local/include/gmp.h) {
-        GMP_PREFIX = /usr/local
+    # Probe Homebrew, preferring the prefix matching Qt's own target
+    # architecture first — a Rosetta (x86_64) build must not pick up the
+    # native arm64 Homebrew at /opt/homebrew (or vice versa), or the linker
+    # fails with "found architecture 'arm64', required architecture
+    # 'x86_64'" (or the reverse).
+    contains(QT_ARCH, x86_64) {
+        HB_PREFIX_1 = /usr/local
+        HB_PREFIX_2 = /opt/homebrew
+    } else {
+        HB_PREFIX_1 = /opt/homebrew
+        HB_PREFIX_2 = /usr/local
+    }
+
+    exists($$HB_PREFIX_1/include/gmp.h) {
+        GMP_PREFIX = $$HB_PREFIX_1
+    } else:exists($$HB_PREFIX_2/include/gmp.h) {
+        GMP_PREFIX = $$HB_PREFIX_2
     } else {
         GMP_PREFIX = /usr
     }
@@ -43,13 +55,12 @@ macx {
     GMP_MPFR_LIBS   = -L$$GMP_PREFIX/lib -lgmp -lmpfr
     GMP_INCLUDEPATH = $$GMP_PREFIX/include
 
-    # Detect Homebrew Qt prefix (Apple Silicon vs Intel)
-    exists(/opt/homebrew/opt/qt/lib) {
-        QMAKE_LFLAGS   += -L/opt/homebrew/opt/qt/lib
-        QMAKE_CXXFLAGS += -I/opt/homebrew/opt/qt/include
-    } else:exists(/usr/local/opt/qt/lib) {
-        QMAKE_LFLAGS   += -L/usr/local/opt/qt/lib
-        QMAKE_CXXFLAGS += -I/usr/local/opt/qt/include
+    exists($$HB_PREFIX_1/opt/qt/lib) {
+        QMAKE_LFLAGS   += -L$$HB_PREFIX_1/opt/qt/lib
+        QMAKE_CXXFLAGS += -I$$HB_PREFIX_1/opt/qt/include
+    } else:exists($$HB_PREFIX_2/opt/qt/lib) {
+        QMAKE_LFLAGS   += -L$$HB_PREFIX_2/opt/qt/lib
+        QMAKE_CXXFLAGS += -I$$HB_PREFIX_2/opt/qt/include
     }
 }
 
