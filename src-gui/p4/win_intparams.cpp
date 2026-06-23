@@ -25,6 +25,8 @@
 #include "p4application.h"
 
 #include <QButtonGroup>
+#include <QFrame>
+#include <QStyle>
 
 QIntParamsDlg::~QIntParamsDlg() { getDataFromDlg(); }
 
@@ -52,6 +54,7 @@ QIntParamsDlg::QIntParamsDlg()
     lbl_stepsize_ = new QLabel("Step Size:", this);
     lbl_stepsize_->setFont(*(g_p4app->boldFont_));
     edt_stepsize_ = new QLineEdit("0.01", this);
+    edt_stepsize_->setMaximumWidth(100);
 
     lbl0_curstep_ = new QLabel("Current Step Size:", this);
     lbl0_curstep_->setFont(*(g_p4app->boldFont_));
@@ -60,14 +63,17 @@ QIntParamsDlg::QIntParamsDlg()
     lbl_maxstep_ = new QLabel("Max Step Size:", this);
     lbl_maxstep_->setFont(*(g_p4app->boldFont_));
     edt_maxstep_ = new QLineEdit("0.1", this);
+    edt_maxstep_->setMaximumWidth(100);
 
     lbl_minstep_ = new QLabel("Min Step Size:", this);
     lbl_minstep_->setFont(*(g_p4app->boldFont_));
     edt_minstep_ = new QLineEdit("1e-06", this);
+    edt_minstep_->setMaximumWidth(100);
 
     lbl_tolerance_ = new QLabel("Tolerance:", this);
     lbl_tolerance_->setFont(*(g_p4app->boldFont_));
     edt_tolerance_ = new QLineEdit("1e-06", this);
+    edt_tolerance_->setMaximumWidth(100);
 
     QLabel *lbl_numpoints = new QLabel("# Points:", this);
     lbl_numpoints->setFont(*(g_p4app->boldFont_));
@@ -76,6 +82,7 @@ QIntParamsDlg::QIntParamsDlg()
     spin_numpoints_->setMaximum(MAX_INTPOINTS);
 
     btn_reset_ = new QPushButton("&Reset", this);
+    btn_reset_->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
 
 #ifdef TOOLTIPS
     btn_org_->setToolTip("Integrate orbits w.r.t. original vector field");
@@ -100,11 +107,14 @@ QIntParamsDlg::QIntParamsDlg()
     // layout
 
     mainLayout_ = new QBoxLayout(QBoxLayout::TopToBottom, this);
+    mainLayout_->setContentsMargins(10, 10, 10, 10);
+    mainLayout_->setSpacing(10);
 
     QHBoxLayout *kindLayout = new QHBoxLayout();
     kindLayout->addWidget(kindlabel);
     kindLayout->addWidget(btn_org_);
     kindLayout->addWidget(btn_red_);
+    kindLayout->addStretch(0);
 
     mainLayout_->addLayout(kindLayout);
 
@@ -112,7 +122,13 @@ QIntParamsDlg::QIntParamsDlg()
     typeLayout->addWidget(typelabel);
     typeLayout->addWidget(btn_dots_);
     typeLayout->addWidget(btn_dashes_);
+    typeLayout->addStretch(0);
     mainLayout_->addLayout(typeLayout);
+
+    QFrame *sep1 = new QFrame(this);
+    sep1->setFrameShape(QFrame::HLine);
+    sep1->setFrameShadow(QFrame::Sunken);
+    mainLayout_->addWidget(sep1);
 
     QHBoxLayout *layout2 = new QHBoxLayout();
     layout2->addWidget(lbl_stepsize_);
@@ -144,6 +160,10 @@ QIntParamsDlg::QIntParamsDlg()
     layout7->addWidget(spin_numpoints_);
     layout7->addStretch(0);
 
+    QFrame *sep2 = new QFrame(this);
+    sep2->setFrameShape(QFrame::HLine);
+    sep2->setFrameShadow(QFrame::Sunken);
+
     QHBoxLayout *layout8 = new QHBoxLayout();
     layout8->addStretch(1);
     layout8->addWidget(btn_reset_);
@@ -155,6 +175,7 @@ QIntParamsDlg::QIntParamsDlg()
     mainLayout_->addLayout(layout5);
     mainLayout_->addLayout(layout6);
     mainLayout_->addLayout(layout7);
+    mainLayout_->addWidget(sep2);
     mainLayout_->addLayout(layout8);
     mainLayout_->addStretch(0);
 
