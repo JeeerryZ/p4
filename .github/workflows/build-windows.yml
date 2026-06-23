@@ -1,0 +1,65 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-tools
+            mingw-w64-x86_64-gmp
+            mingw-w64-x86_64-mpfr
+            mingw-w64-x86_64-toolchain
+            make
+
+      - name: Configure with qmake
+        run: qmake -r P4.pro
+
+      - name: Compile
+        run: mingw32-make -j$(nproc)
+
+      - name: Assemble dist directory
+        run: |
+          mkdir -p dist
+          for bin in p4 lyapunov lyapunov_mpf separatrice; do
+            cp "build/$bin/$bin.exe" dist/
+          done
+
+      - name: Bundle Qt runtime dependencies
+        run: windeployqt dist/p4.exe --no-translations
+
+      - name: Zip distribution
+        shell: pwsh
+        run: Compress-Archive -Path dist\* -DestinationPath P4-windows-x86_64.zip
+
+      - name: Upload zip as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: P4-windows-x86_64
+          path: P4-windows-x86_64.zip
+          retention-days: 30
+
+      - name: Attach zip to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: P4-windows-x86_64.zip
