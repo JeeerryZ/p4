@@ -32,8 +32,17 @@ jobs:
         uses: actions/checkout@v4
 
       # ── Dependencies ──────────────────────────────────────────────────────
+      # The runner only ships a native arm64 Homebrew at /opt/homebrew. The
+      # x86_64 leg needs its own Rosetta-native Homebrew at /usr/local —
+      # `arch -x86_64 brew` alone still resolves to the arm64 install via
+      # PATH and Homebrew correctly refuses to operate cross-arch on it.
+      - name: Install Rosetta Homebrew
+        if: matrix.arch == 'x86_64'
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
       - name: Install dependencies
-        run: ${{ matrix.arch_prefix }} brew install qt gmp mpfr
+        run: ${{ matrix.arch_prefix }} ${{ matrix.brew_prefix }}/bin/brew install qt gmp mpfr
 
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Configure with qmake
@@ -105,9 +114,9 @@ jobs:
       # ── Create DMG ────────────────────────────────────────────────────────
       - name: Create DMG
         run: |
-          ${{ matrix.arch_prefix }} brew install create-dmg
+          ${{ matrix.arch_prefix }} ${{ matrix.brew_prefix }}/bin/brew install create-dmg
 
-          ${{ matrix.arch_prefix }} create-dmg \
+          ${{ matrix.arch_prefix }} ${{ matrix.brew_prefix }}/bin/create-dmg \
             --volname "P4" \
             --volicon "help/p4smallicon.png" \
             --window-size 540 360 \
