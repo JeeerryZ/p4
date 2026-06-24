@@ -13,36 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  # git-cliff's action is a Docker container action, which GitHub Actions
-  # only supports on Linux runners — it cannot run directly on macos-14.
-  # Generate the changelog once here and hand it to the build jobs below.
-  changelog:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGES.md
-
-      - name: Upload changelog
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-changelog
-          path: CHANGES.md
-          retention-days: 1
-
   build:
-    needs: [changelog]
-    if: always()
     strategy:
       fail-fast: false
       matrix:
@@ -168,13 +139,6 @@ jobs:
           name: P4-macOS-${{ matrix.arch }}
           path: P4-macOS-${{ matrix.arch }}.dmg
           retention-days: 30
-
-      # ── Release notes ────────────────────────────────────────────────────
-      - name: Download changelog
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-changelog
 
       # On a version tag (1.2.3), attach the DMG to a GitHub Release
       - name: Attach DMG to GitHub Release
