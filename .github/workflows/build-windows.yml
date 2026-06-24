@@ -12,36 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  # git-cliff's action is a Docker container action, which GitHub Actions
-  # only supports on Linux runners — it cannot run directly on
-  # windows-latest. Generate the changelog once here and hand it to build.
-  changelog:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Generate changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGES.md
-
-      - name: Upload changelog
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-changelog
-          path: CHANGES.md
-          retention-days: 1
-
   build:
-    needs: [changelog]
-    if: always()
     runs-on: windows-latest
     defaults:
       run:
@@ -90,12 +61,6 @@ jobs:
           name: P4-windows-x86_64
           path: P4-windows-x86_64.zip
           retention-days: 30
-
-      - name: Download changelog
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-changelog
 
       - name: Attach zip to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
