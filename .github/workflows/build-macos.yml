@@ -77,6 +77,11 @@ jobs:
           mkdir -p P4.app/Contents/MacOS P4.app/Contents/Resources
           cp build/p4/p4 P4.app/Contents/MacOS/
 
+          # Single source of truth for the version, so the bundle cannot drift
+          # from the binary the way the hardcoded 7.1.0 did.
+          P4_VERSION=$(sed -n 's/^#define VERSION "\(.*\)"/\1/p' src-gui/version.h)
+          echo "Bundling version $P4_VERSION"
+
           cat > P4.app/Contents/Info.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -87,8 +92,8 @@ jobs:
             <key>CFBundleIdentifier</key>     <string>cat.gsd.p4</string>
             <key>CFBundleName</key>           <string>P4</string>
             <key>CFBundleDisplayName</key>    <string>P4</string>
-            <key>CFBundleVersion</key>        <string>7.1.0</string>
-            <key>CFBundleShortVersionString</key> <string>7.1.0</string>
+            <key>CFBundleVersion</key>        <string>@@P4_VERSION@@</string>
+            <key>CFBundleShortVersionString</key> <string>@@P4_VERSION@@</string>
             <key>CFBundlePackageType</key>    <string>APPL</string>
             <key>CFBundleIconFile</key>       <string>P4.icns</string>
             <key>LSMinimumSystemVersion</key> <string>12.0</string>
@@ -96,6 +101,10 @@ jobs:
           </dict>
           </plist>
           PLIST
+
+          # The heredoc is quoted so the plist is taken literally; fill the
+          # version in afterwards.
+          sed -i '' "s/@@P4_VERSION@@/$P4_VERSION/g" P4.app/Contents/Info.plist
 
           # Generate P4.icns from help/newp4icon.ico
           ICONSET="P4.iconset"
@@ -115,6 +124,14 @@ jobs:
              build/lyapunov_mpf/lyapunov_mpf \
              build/separatrice/separatrice \
              P4.app/Contents/MacOS/
+
+          # lyapunov caches its summation tables next to the executables and
+          # generates them on first use.  Without this directory it aborts
+          # leaving a 0-byte result file and Maple reports
+          # "Error (readlyapunovresult) invalid subscript selector" for every
+          # weak focus.  Inside a bundle the executable's parent is MacOS, not
+          # bin, so getDefaultP4Path() resolves the base path to Contents/MacOS.
+          mkdir -p P4.app/Contents/MacOS/sumtables
 
       # ── Create DMG ────────────────────────────────────────────────────────
       - name: Create DMG

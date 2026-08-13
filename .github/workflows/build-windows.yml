@@ -47,6 +47,13 @@ jobs:
           for bin in p4 lyapunov lyapunov_mpf separatrice; do
             cp "build/$bin/$bin.exe" dist/
           done
+          # lyapunov caches its summation tables here and generates them on
+          # first use.  Without the directory it cannot write them, aborts
+          # leaving a 0-byte result file, and Maple reports
+          # "Error (readlyapunovresult) invalid subscript selector" for every
+          # weak focus.  install_win.ps1 creates it; this job assembles dist/
+          # by hand, so it has to do the same.
+          mkdir -p dist/sumtables
 
       - name: Bundle Qt runtime dependencies
         run: windeployqt dist/p4.exe --no-translations
