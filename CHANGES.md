@@ -1,42 +1,27 @@
 ### Features
 
-- Save prompts for file location; new app icon for windows/macos
-- Optional .app/dmg creation step in install_mac.sh
+* Plot window keeps only the docked control panel; the menu bar now carries
+File, Edit, Plot and Panels, and the toolbars are gone
+* Phase portrait stays circular at any window size, so the window no longer
+resizes itself to keep the drawing area square
+* Wider control panel and a plot window that opens shorter than it is wide
 
 ### Fixes
 
-- Cap dock width to fix squashed sphere; prettify dock panel
-- Crash on closing plot window (use-after-delete in undo stack)
-- Don't auto-expand maple log; ensure exe icon resource rebuilds
-- Re-converge plot window aspect ratio after dock-driven sphere resize
-- Auto-load vector field on browse/recent file; fix window jumping to (0,0)
-- Browse button styling, enable orbit forward/backward+continue together
-- Scale initial plot window size to available screen space
-- macOS browse button, save path, and sumtable path issues
-- Bootstrap rosetta homebrew for x86_64 cross-build
-- Grant contents:write permission for release creation
-- Pick GMP/MPFR/Qt homebrew prefix matching target architecture
-- Resolve windows GMP/MPFR linking and wire up release changelogs
-- Run git-cliff on a linux job, not directly on macos/windows
+* Parameters beyond the fourth were replaced by the previously loaded file's
+values on load, and evaluated with those wrong values
+* Weak-focus study failed with "readlyapunovresult: invalid subscript
+selector": the sumtables directory was missing
+* lyapunov\_mpf could not start on Windows, giving the same error whenever the
+precision was raised
+* Heap corruption on every click outside the disc, and on selecting a zoom
+region or a limit-cycle section
+* Reading a vector field file with a very long line could overwrite memory
+* Windows install script reported success when it could not replace a running
+p4.exe, silently keeping the previous build
 
 ### CI
 
-- Add intel (x86_64) macOS build to matrix alongside arm64
-- Generate P4.icns and set cfbundleiconfile in macOS workflow
-- Add git-cliff config for release notes generation
-- Trigger macOS build on bare semver tags, not v-prefixed
-- Attach macOS dmg to release for any tag, not just v-prefixed
-- Cross-build macOS intel via rosetta 2 on arm64 runner
-- Verify build architecture after compile step
-- Add windows build workflow, attach zip to releases
-- Drop unused make package, use forward slashes consistently
+* Ship the sumtables directory in the macOS disk image and the Windows archive (was causing some erros while computing vector fields)
+* Read the macOS bundle version from version.h instead of a hardcoded value
 
-### Documentation
-
-- Add release automation design doc
-- Add release automation implementation plan
-- Fix stale v-prefixed tag example in comment
-
-### Chore
-
-- Bump version to 7.2.0
