@@ -52,8 +52,9 @@ class QWinSphere : public QWidget
     ~QWinSphere();
 
     /* Member variables */
-    double horPixelsPerMM_;
-    double verPixelsPerMM_;
+    // horPixelsPerMM_/verPixelsPerMM_ were removed: they cancelled out of every
+    // expression that used them, and widthMM()/heightMM() are unreliable on
+    // HiDPI displays.  See plotScale().
 
     double x0_, y0_; // world-coordinates of upper-left corner
     double x1_, y1_; // world-coordinates of upper-right corner
@@ -82,8 +83,9 @@ class QWinSphere : public QWidget
 
     /* Member functions */
 
-    bool hasHeightForWidth() const override { return true; }
-    int heightForWidth(int w) const override { return w; }
+    // The widget no longer has to be square: plotScale() keeps the disc
+    // circular whatever shape it gets, so forcing height == width only stopped
+    // the plot window from being made shorter.
     QSize sizeHint() const override;
 
     void paintEvent(QPaintEvent *);
@@ -152,6 +154,14 @@ class QWinSphere : public QWidget
     void loadAnchorMap(void);
 
     // coordinate changes: from world to windows coordinates
+    // Uniform pixels-per-world-unit, plus the offsets that centre the drawing.
+    // Derived from w_/h_ on demand rather than cached: w_ and h_ are assigned
+    // in a dozen places (printing swaps them in and out), and cached copies
+    // would fall out of step.
+    double plotScale(void) const;
+    double plotOffsetX(void) const;
+    double plotOffsetY(void) const;
+
     int coWinX(double x);
     int coWinY(double y);
     // from windows to world coordinates

@@ -86,6 +86,11 @@ void QP4Application::signalEvaluated(int exitCode)
     if (g_cmdLine_AutoExit) {
         g_cmdLine_AutoPlot = false;
         g_p4stardlg->onQuit();
+        // The start dialog is never shown in batch mode, so closing it does not
+        // count as closing the last window and quitOnLastWindowClosed never
+        // fires -- exec() would keep running with no window left.  Stop the
+        // event loop explicitly.
+        quit();
         return;
     }
 

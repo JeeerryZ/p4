@@ -45,14 +45,11 @@
 #include <QSettings>
 #include <QTabWidget>
 #include <QTimer>
-#include <QToolBar>
 
 QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
 {
     setContextMenuPolicy(Qt::NoContextMenu);
     
-    QToolBar *toolBar1;
-    QToolBar *toolBar2;
     parent_ = main;
 
     // setAttribute( Qt::WA_PaintOnScreen, true );
@@ -69,84 +66,69 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     //    palette.setColor(backgroundRole(), QXFIGCOLOR(bgColours::CBACKGROUND) );
     //    setPalette(palette);
 
-    toolBar1 = new QToolBar("PlotBar1", this);
-    toolBar1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    toolBar2 = new QToolBar("PlotBar2", this);
-    toolBar2->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-    toolBar1->setMovable(false);
-    toolBar2->setMovable(false);
+    // No toolbars: the docked tab panel is the only control surface, and the
+    // menu bar carries the commands that have no tab of their own.  Eight of
+    // the old toolbar buttons only revealed the dock and selected a tab, which
+    // the tabs already do.
+    //
+    // The five commands lose their Alt shortcuts because those collide with the
+    // menu mnemonics (Close Alt+E vs &Edit, Print Alt+P vs &Plot, Legend Alt+L
+    // vs Pane&ls); Print and Close take the standard sequences instead.
 
     actClose_ = new QAction("Clos&e", this);
-    actClose_->setShortcut(Qt::ALT | Qt::Key_E);
+    actClose_->setShortcut(QKeySequence::Close);
     connect(actClose_, &QAction::triggered, this, &QPlotWnd::onBtnClose);
-    toolBar1->addAction(actClose_);
 
     actRefresh_ = new QAction("&Refresh", this);
-    actRefresh_->setShortcut(Qt::ALT | Qt::Key_R);
     connect(actRefresh_, &QAction::triggered, this, &QPlotWnd::onBtnRefresh);
-    toolBar1->addAction(actRefresh_);
 
     actLegend_ = new QAction("&Legend", this);
-    actLegend_->setShortcut(Qt::ALT | Qt::Key_L);
     connect(actLegend_, &QAction::triggered, this, &QPlotWnd::onBtnLegend);
-    toolBar1->addAction(actLegend_);
+
+    actPlotAllSeps_ = new QAction("Plot All Separa&trices", this);
+    connect(actPlotAllSeps_, &QAction::triggered, this,
+            &QPlotWnd::onBtnPlotAllSeps);
+
+    actPrint_ = new QAction("&Print...", this);
+    actPrint_->setShortcut(QKeySequence::Print);
+    connect(actPrint_, &QAction::triggered, this, &QPlotWnd::onBtnPrint);
+
+    // Panel actions: these reveal the dock and select their tab.  They keep
+    // their Alt shortcuts, which do not collide with the menu mnemonics.
 
     actOrbits_ = new QAction("&Orbits", this);
     actOrbits_->setShortcut(Qt::ALT | Qt::Key_O);
     connect(actOrbits_, &QAction::triggered, this, &QPlotWnd::onBtnOrbits);
-    toolBar1->addAction(actOrbits_);
 
     actIntParams_ = new QAction("&Integration Parameters", this);
     actIntParams_->setShortcut(Qt::ALT | Qt::Key_I);
     connect(actIntParams_, &QAction::triggered, this,
             &QPlotWnd::onBtnIntParams);
-    toolBar1->addAction(actIntParams_);
 
     actGCF_ = new QAction("&GCF", this);
     actGCF_->setShortcut(Qt::ALT | Qt::Key_G);
     connect(actGCF_, &QAction::triggered, this, &QPlotWnd::onBtnGCF);
-    toolBar1->addAction(actGCF_);
 
     actCurve_ = new QAction("&Curves", this);
     actCurve_->setShortcut(Qt::ALT | Qt::Key_C);
     connect(actCurve_, &QAction::triggered, this, &QPlotWnd::onBtnCurve);
-    toolBar1->addAction(actCurve_);
 
     actPlotSep_ = new QAction("Plot &Separatrice", this);
     actPlotSep_->setShortcut(Qt::ALT | Qt::Key_S);
     connect(actPlotSep_, &QAction::triggered, this, &QPlotWnd::onBtnPlotSep);
-    toolBar2->addAction(actPlotSep_);
-
-    actPlotAllSeps_ = new QAction("Plot All Separa&trices", this);
-    actPlotAllSeps_->setShortcut(Qt::ALT | Qt::Key_T);
-    connect(actPlotAllSeps_, &QAction::triggered, this,
-            &QPlotWnd::onBtnPlotAllSeps);
-    toolBar2->addAction(actPlotAllSeps_);
 
     actLimitCycles_ = new QAction("Limit C&ycles", this);
     actLimitCycles_->setShortcut(Qt::ALT | Qt::Key_Y);
     connect(actLimitCycles_, &QAction::triggered, this,
             &QPlotWnd::onBtnLimitCycles);
-    toolBar2->addAction(actLimitCycles_);
 
     actIsoclines_ = new QAction("Isoclines", this);
     connect(actIsoclines_, &QAction::triggered, this,
             &QPlotWnd::onBtnIsoclines);
-    toolBar2->addAction(actIsoclines_);
 
     actView_ = new QAction("&View", this);
     actView_->setShortcut(Qt::ALT | Qt::Key_V);
     connect(actView_, &QAction::triggered, this, &QPlotWnd::onBtnView);
-    toolBar2->addAction(actView_);
-
-    actPrint_ = new QAction("&Print", this);
-    actPrint_->setShortcut(Qt::ALT | Qt::Key_P);
-    connect(actPrint_, &QAction::triggered, this, &QPlotWnd::onBtnPrint);
-    toolBar2->addAction(actPrint_);
-
-    addToolBar(Qt::TopToolBarArea, toolBar1);
-    addToolBarBreak(Qt::TopToolBarArea);
-    addToolBar(Qt::TopToolBarArea, toolBar2);
 
     undoStack_ = new QUndoStack(this);
     undoStack_->setUndoLimit(50);
@@ -155,9 +137,30 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     actUndo->setShortcut(QKeySequence::Undo);
     QAction *actRedo = undoStack_->createRedoAction(this, "&Redo");
     actRedo->setShortcut(QKeySequence::Redo);
-    addAction(actUndo);
-    addAction(actRedo);
-    menuBar()->hide();
+
+    QMenu *fileMenu = menuBar()->addMenu("&File");
+    fileMenu->addAction(actPrint_);
+    fileMenu->addSeparator();
+    fileMenu->addAction(actClose_);
+
+    QMenu *editMenu = menuBar()->addMenu("&Edit");
+    editMenu->addAction(actUndo);
+    editMenu->addAction(actRedo);
+
+    QMenu *plotMenu = menuBar()->addMenu("&Plot");
+    plotMenu->addAction(actRefresh_);
+    plotMenu->addAction(actLegend_);
+    plotMenu->addAction(actPlotAllSeps_);
+
+    QMenu *panelsMenu = menuBar()->addMenu("Pane&ls");
+    panelsMenu->addAction(actOrbits_);
+    panelsMenu->addAction(actPlotSep_);
+    panelsMenu->addAction(actGCF_);
+    panelsMenu->addAction(actCurve_);
+    panelsMenu->addAction(actIsoclines_);
+    panelsMenu->addAction(actLimitCycles_);
+    panelsMenu->addAction(actIntParams_);
+    panelsMenu->addAction(actView_);
 
     connect(g_ThisVF, &QInputVF::saveSignal, this, &QPlotWnd::onSaveSignal);
     connect(g_ThisVF, &QInputVF::loadSignal, this, &QPlotWnd::onLoadSignal);
@@ -228,8 +231,12 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     controlDock_->setFeatures(QDockWidget::DockWidgetClosable |
                                QDockWidget::DockWidgetMovable);
     controlDock_->setWidget(controlTabs_);
-    controlDock_->setMinimumWidth(240);
-    controlDock_->setMaximumWidth(320);
+    // Wider than before so all eight tabs are readable without scroll buttons.
+    controlDock_->setMinimumWidth(300);
+    controlDock_->setMaximumWidth(480);
+    // Keep the scroll buttons: even at this width the eight tabs do not all
+    // fit, and without them the last one cannot be reached by clicking.
+    controlTabs_->setElideMode(Qt::ElideNone);
     addDockWidget(Qt::RightDockWidgetArea, controlDock_);
 
     sphere_->show();
@@ -238,15 +245,18 @@ QPlotWnd::QPlotWnd(QStartDlg *main) : QMainWindow()
     // Size the sphere relative to the available screen space so that the
     // plot window isn't tiny on high-resolution / large displays, while
     // never going below the original nominal size on small screens.
+    constexpr int kDockWidth = 430;
     int sphereSize = NOMINALWIDTHPLOTWINDOW;
     if (QScreen *screen = this->screen() ? this->screen()
                                           : QGuiApplication::primaryScreen()) {
         QRect avail = screen->availableGeometry();
-        int maxSphere = qMin(avail.width() - controlDock_->minimumWidth(),
-                              avail.height());
+        int maxSphere = qMin(avail.width() - kDockWidth, avail.height());
         sphereSize = qMax(NOMINALWIDTHPLOTWINDOW, maxSphere * 7 / 10);
     }
-    resize(sphereSize + controlDock_->minimumWidth(), sphereSize);
+    // Shorter than it is wide: the disc no longer needs a square sphere, so the
+    // height only decides how much empty margin sits above and below it.
+    resize(sphereSize + kDockWidth,
+           qMax(NOMINALHEIGHTPLOTWINDOW, sphereSize * 3 / 4));
 
     intParamsWindow_->updateDlgData();
     viewParamsWindow_->updateDlgData();
@@ -345,10 +355,11 @@ void QPlotWnd::resizeEvent(QResizeEvent *e)
 
 void QPlotWnd::adjustHeight(void)
 {
+    // This used to grow the window until the sphere was square, re-converging
+    // on every resize.  The disc is drawn with a uniform scale now, so it stays
+    // circular in a window of any shape; only the unused margin changes, and
+    // the window keeps the size the user chose.
     sphere_->adjustToNewSize();
-    int delta = sphere_->idealh_ - sphere_->h_;
-    if (delta != 0)
-        resize(width(), height() + delta);
     sphere_->refresh();
     statusBar()->showMessage("Ready.");
 }

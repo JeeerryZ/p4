@@ -99,8 +99,6 @@ QWinSphere::QWinSphere(QWidget *parent, QStatusBar *bar, bool isZoom, double x1,
     selectingPointRadius_ = 0;
     selectingPointStep_ = 0;
 
-    horPixelsPerMM_ = ((double)w_) / ((double)widthMM());
-    verPixelsPerMM_ = ((double)h_) / ((double)heightMM());
 
     setMouseTracking(true);
     msgBar_ = bar;
@@ -925,22 +923,42 @@ void QWinSphere::mouseMoveEvent(QMouseEvent *e)
     }
 }
 
+// The world rectangle used to be stretched onto the widget independently in x
+// and y, so any window whose shape did not match dx_:dy_ drew the Poincare disc
+// as an ellipse -- which is why the window had to be resized until the sphere
+// was square again.  Scaling both axes by the same factor and centring what is
+// left keeps it circular at every window size, on every platform, with no
+// window resizing involved.  When the caller has already matched the shape --
+// printing sets h_ = w_*dy_/dx_ -- the two scales coincide and the offsets are
+// zero, so nothing changes there.
+
+double QWinSphere::plotScale(void) const
+{
+    double sx = (dx_ != 0.0) ? ((double)(w_ - 1)) / dx_ : 1.0;
+    double sy = (dy_ != 0.0) ? ((double)(h_ - 1)) / dy_ : 1.0;
+    return (sx < sy) ? sx : sy;
+}
+
+double QWinSphere::plotOffsetX(void) const
+{
+    return (((double)(w_ - 1)) - dx_ * plotScale()) / 2.0;
+}
+
+double QWinSphere::plotOffsetY(void) const
+{
+    return (((double)(h_ - 1)) - dy_ * plotScale()) / 2.0;
+}
+
 double QWinSphere::coWorldX(int x)
 {
-    double wx;
-
-    wx = (double)x;
-    wx /= (w_ - 1);
-    return (wx * dx_ + x0_);
+    // inverse of coWinX
+    return ((double)x - plotOffsetX()) / plotScale() + x0_;
 }
 
 double QWinSphere::coWorldY(int y)
 {
-    double wy;
-
-    wy = (double)(h_ - 1 - y);
-    wy /= (h_ - 1);
-    return (wy * dy_ + y0_);
+    // inverse of coWinY, for the non-reversed (on screen) orientation
+    return ((double)(h_ - 1 - y) - plotOffsetY()) / plotScale() + y0_;
 }
 
 int QWinSphere::coWinX(double x)
@@ -948,32 +966,26 @@ int QWinSphere::coWinX(double x)
     double wx;
     int iwx;
 
-    wx = (x - x0_) / dx_;
-    wx *= w_ - 1;
+    wx = plotOffsetX() + (x - x0_) * plotScale();
 
     iwx = (int)(wx + 0.5); // +0.5 to round upwards
     if (iwx >= w_)
         iwx = w_ - 1;
+    if (iwx < 0)
+        iwx = 0;
 
     return iwx;
 }
 
 int QWinSphere::coWinH(double deltax)
 {
-    double wx;
-
-    wx = deltax / dx_;
-    wx *= w_ - 1;
-    return (int)(wx + 0.5);
+    return (int)(deltax * plotScale() + 0.5);
 }
 
 int QWinSphere::coWinV(double deltay)
 {
-    double wy;
-
-    wy = deltay / dy_;
-    wy *= h_ - 1;
-    return (int)(wy + 0.5);
+    // Same scale as coWinH -- that is what keeps circles circular.
+    return (int)(deltay * plotScale() + 0.5);
 }
 
 int QWinSphere::coWinY(double y)
@@ -981,12 +993,14 @@ int QWinSphere::coWinY(double y)
     double wy;
     int iwy;
 
-    wy = (y - y0_) / dy_;
-    wy *= h_ - 1;
+    // measured upwards from the bottom of the centred drawing area
+    wy = plotOffsetY() + (y - y0_) * plotScale();
 
     iwy = (int)(wy + 0.5); // +0.5 to round upwards
     if (iwy >= h_)
         iwy = h_ - 1;
+    if (iwy < 0)
+        iwy = 0;
 
     return (reverseYAxis_)
                ? iwy
