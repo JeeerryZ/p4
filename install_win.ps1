@@ -80,11 +80,38 @@ New-Item -ItemType Directory -Force $DistDir | Out-Null
 
 foreach ($bin in @("p4", "lyapunov", "lyapunov_mpf", "separatrice")) {
     $src = "$BuildDir\$bin\$bin.exe"
+    $dst = "$DistDir\$bin.exe"
     Write-Step "Copying $bin.exe"
     if (-not (Test-Path $src)) { Write-Fail "$src not found -- did compilation succeed?" }
-    Copy-Item $src $DistDir
+
+    # Windows locks a running executable, so copying over it fails.  Without
+    # this check the script reported success and left dist\ holding the
+    # previous build, which is indistinguishable from a build that did nothing.
+    try {
+        Copy-Item $src $dst -Force -ErrorAction Stop
+    } catch {
+        $running = Get-Process -Name $bin -ErrorAction SilentlyContinue
+        if ($running) {
+            Write-Fail "$bin.exe is running (PID $($running.Id -join ', ')) -- close it and re-run"
+        }
+        Write-Fail "could not copy $bin.exe to dist\: $($_.Exception.Message)"
+    }
+
+    # Copy-Item can report success and still leave an older file behind, so
+    # compare what actually landed in dist\.
+    if ((Get-Item $dst).LastWriteTimeUtc -lt (Get-Item $src).LastWriteTimeUtc) {
+        Write-Fail "$bin.exe in dist\ is older than the one just built -- copy did not take effect"
+    }
     Write-Ok "$bin.exe"
 }
+
+# lyapunov(.exe) caches its summation tables (sum1.tab, sum2.tab, ...) here and
+# generates them on first use.  Without the directory the table write fails, the
+# binary aborts leaving a 0-byte result file, and Maple reports
+# "Error (readlyapunovresult) invalid subscript selector".
+Write-Step "Creating sumtables\"
+New-Item -ItemType Directory -Force "$DistDir\sumtables" | Out-Null
+Write-Ok "sumtables\"
 
 # Run windeployqt to copy Qt DLLs
 Write-Step "Running windeployqt"

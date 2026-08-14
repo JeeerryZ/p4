@@ -180,7 +180,7 @@ bool QInputVF::load(void)
     if (fscanf(fp, "%d\n", &typeofstudy_) != 1 ||
         fscanf(fp, "%d\n", &flag_numeric) != 1 ||
         fscanf(fp, "%d\n", &precision_) != 1 ||
-        fscanf(fp, "%[^\n]\n", scanbuf) != 1 ||
+        fscanf(fp, "%2559[^\n]\n", scanbuf) != 1 ||
         fscanf(fp, "%d\n", &flag_testsep) != 1 ||
         fscanf(fp, "%d\n", &taylorlevel_) != 1 ||
         fscanf(fp, "%d\n", &numericlevel_) != 1 ||
@@ -194,12 +194,12 @@ bool QInputVF::load(void)
         testsep_ = ((flag_testsep == 0) ? false : true);
     }
     if (typeofstudy_ == TYPEOFSTUDY_ONE) {
-        if (fscanf(fp, "%[^\n]\n", scanbuf) != 1) {
+        if (fscanf(fp, "%2559[^\n]\n", scanbuf) != 1) {
             fclose(fp);
             return false;
         }
         x0_ = scanbuf;
-        if (fscanf(fp, "%[^\n]\n", scanbuf) != 1) {
+        if (fscanf(fp, "%2559[^\n]\n", scanbuf) != 1) {
             fclose(fp);
             return false;
         }
@@ -215,17 +215,17 @@ bool QInputVF::load(void)
         }
     }
 
-    if (fscanf(fp, "%[^\n]\n", scanbuf) != 1) {
+    if (fscanf(fp, "%2559[^\n]\n", scanbuf) != 1) {
         fclose(fp);
         return false;
     }
     xdot_ = scanbuf;
-    if (fscanf(fp, "%[^\n]\n", scanbuf) != 1) {
+    if (fscanf(fp, "%2559[^\n]\n", scanbuf) != 1) {
         fclose(fp);
         return false;
     }
     ydot_ = scanbuf;
-    if (fscanf(fp, "%[^\n]\n", scanbuf) != 1) {
+    if (fscanf(fp, "%2559[^\n]\n", scanbuf) != 1) {
         fclose(fp);
         return false;
     }
@@ -250,7 +250,7 @@ bool QInputVF::load(void)
     }
     for (i = 0; i < numparams_; i++) {
         int c;
-        if (fscanf(fp, "%s", scanbuf) != 1) {
+        if (fscanf(fp, "%2559s", scanbuf) != 1) {
             fclose(fp);
             return false;
         }
@@ -258,7 +258,7 @@ bool QInputVF::load(void)
         while ((c = fgetc(fp)) == '\n' || c == 13)
             ;
         ungetc(c, fp);
-        if (fscanf(fp, "%[^\r\n]\n", scanbuf) != 1) {
+        if (fscanf(fp, "%2559[^\r\n]\n", scanbuf) != 1) {
             fclose(fp);
             return false;
         }

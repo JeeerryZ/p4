@@ -78,14 +78,19 @@ void QP4Application::signalEvaluated(int exitCode)
 
     g_ThisVF->finishEvaluation(exitCode);
 
-    QP4Event *e = new QP4Event((QEvent::Type)TYPE_SIGNAL_EVALUATED, nullptr);
-    g_p4app->postEvent(g_p4stardlg, e);
-
+    // In batch mode (-x) onQuit() deletes g_ThisVF and the child windows right
+    // away.  Posting the "evaluated" event first would have it delivered after
+    // that teardown, and QStartDlg::signalEvaluated() dereferences g_ThisVF --
+    // which crashed p4 -x with an access violation.  Quit without posting: no
+    // window is left to refresh.
     if (g_cmdLine_AutoExit) {
         g_cmdLine_AutoPlot = false;
         g_p4stardlg->onQuit();
         return;
     }
+
+    QP4Event *e = new QP4Event((QEvent::Type)TYPE_SIGNAL_EVALUATED, nullptr);
+    g_p4app->postEvent(g_p4stardlg, e);
 
     if (g_cmdLine_AutoPlot) {
         g_cmdLine_AutoPlot = false;

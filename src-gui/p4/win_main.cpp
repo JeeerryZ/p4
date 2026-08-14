@@ -736,6 +736,14 @@ void QStartDlg::closeEvent(QCloseEvent *ce)
 
 void QStartDlg::customEvent(QEvent *e)
 {
+    // onQuit() deletes g_ThisVF, so any of these signals still sitting in the
+    // event queue during teardown would dereference a null pointer.  The
+    // handlers below all work on the vector field; drop them once it is gone.
+    if (g_ThisVF == nullptr) {
+        QWidget::customEvent(e);
+        return;
+    }
+
     switch ((int)(e->type())) {
     case TYPE_SIGNAL_EVALUATING:
         signalEvaluating();

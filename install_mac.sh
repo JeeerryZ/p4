@@ -161,6 +161,11 @@ for bin in p4 lyapunov lyapunov_mpf separatrice; do
     [[ -f "$src" ]] || die "$bin not found in build/"
     cp "$src" "$INSTALL_DIR/"
 done
+# lyapunov caches its summation tables (sum1.tab, sum2.tab, ...) here and
+# generates them on first use.  Without the directory the table write fails, the
+# binary aborts leaving a 0-byte result file, and Maple reports
+# "Error (readlyapunovresult) invalid subscript selector".
+mkdir -p "$INSTALL_DIR/sumtables"
 ok "Binaries copied to dist/"
 
 MACDEPLOYQT="$BREW_PREFIX/opt/qt/bin/macdeployqt"

@@ -1052,7 +1052,10 @@ void QWinSphere::mousePressEvent(QMouseEvent *e)
             e1 = new QP4Event((QEvent::Type)TYPE_SELECT_ORBIT, data1);
             g_p4app->postEvent(parentWnd_, e1);
         } else {
-            free(data1);
+            // data1 comes from new, so it must be released with delete --
+            // free() on it corrupts the heap, and this branch runs on every
+            // click outside the plot region.
+            delete data1;
         }
 
         QWidget::mousePressEvent(e);
@@ -1102,11 +1105,14 @@ void QWinSphere::mouseReleaseEvent(QMouseEvent *e)
             saveAnchorMap();
             selectingLCSection_ = false;
 
-            double *data1 = new double[4];
-            data1[0] = coWorldX(lcAnchor1_.x());
-            data1[1] = coWorldY(lcAnchor1_.y());
-            data1[2] = coWorldX(lcAnchor2_.x());
-            data1[3] = coWorldY(lcAnchor2_.y());
+            // The receiver reads this as two DOUBLEPOINTs, so allocate it as
+            // such: a double[4] released through a DOUBLEPOINT* is undefined
+            // behaviour.  QPlotWnd frees it with delete[].
+            DOUBLEPOINT *data1 = new DOUBLEPOINT[2];
+            data1[0].x = coWorldX(lcAnchor1_.x());
+            data1[0].y = coWorldY(lcAnchor1_.y());
+            data1[1].x = coWorldX(lcAnchor2_.x());
+            data1[1].y = coWorldY(lcAnchor2_.y());
             QP4Event *e1 =
                 new QP4Event((QEvent::Type)TYPE_SELECT_LCSECTION, data1);
             g_p4app->postEvent(parentWnd_, e1);

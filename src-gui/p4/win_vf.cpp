@@ -378,9 +378,19 @@ bool QVFParams::updateDlgData(void)
         // valid.
     }
 
+    // Refresh the full shadow copy, not just the visible rows: only
+    // MAXNUMPARAMSSHOWN line edits exist, so sLabels_/sValues_ hold every
+    // parameter and getDataFromDlg() writes all of them back into g_ThisVF.
+    // Leaving the off-screen entries at the previously loaded file's values
+    // silently overwrote the parameters just read from disk.
+    for (i = 0; i < currentNumParams_; i++) {
+        sLabels_[i] = g_ThisVF->parlabel_[i];
+        sValues_[i] = g_ThisVF->parvalue_[i];
+    }
+
     for (i = 0; i < currentShownParams_; i++) {
-        paramNames_[i]->setText(g_ThisVF->parlabel_[i + currentPageIndex_]);
-        paramValues_[i]->setText(g_ThisVF->parvalue_[i + currentPageIndex_]);
+        paramNames_[i]->setText(sLabels_[i + currentPageIndex_]);
+        paramValues_[i]->setText(sValues_[i + currentPageIndex_]);
     }
 
     return true;

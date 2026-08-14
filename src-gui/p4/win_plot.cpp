@@ -586,7 +586,7 @@ void QPlotWnd::customEvent(QEvent *_e)
         data1 = (double *)(e->data());
 
         openZoomWindow(data1[0], data1[1], data1[2], data1[3]);
-        delete data1;
+        delete[] data1; // allocated as new double[4] in QWinSphere
         data1 = nullptr;
         return;
     }
@@ -632,11 +632,9 @@ void QPlotWnd::customEvent(QEvent *_e)
         p = (struct DOUBLEPOINT *)(e->data());
         x0 = p->x;
         y0 = p->y;
-        p++;
-        x1 = p->x;
-        y1 = p->y;
-        p--;
-        delete p;
+        x1 = p[1].x;
+        y1 = p[1].y;
+        delete[] p; // allocated as new DOUBLEPOINT[2] in QWinSphere
         p = nullptr;
 
         MATHFUNC(viewcoord_to_sphere)(x0, y0, pcoord);
