@@ -90,8 +90,38 @@ shorter than it is wide, leaving more room for the portrait itself.
 
 ## Packaging
 
+### The Windows archive could not start
+
+It contained the four programs and five Qt libraries — and nothing else. Every
+other runtime library Qt and P4 depend on (the C++ runtime, PCRE2, HarfBuzz,
+FreeType, ICU, zlib, libpng, MPFR, and a dozen more) was left out, so
+`p4.exe` stopped with *"libstdc++-6.dll was not found"* before it drew
+anything. This was a fault in the automated build, not in any particular
+installation.
+
+The complete set now ships, and the build refuses to publish a package whose
+libraries do not all resolve.
+
+### There is an installer again
+
+`P4-windows-x86_64-setup.exe` installs P4 the way the original distribution
+did: a Start menu entry, an uninstaller, and upgrades in place. The plain
+archive is still published for anyone who prefers to unpack it themselves.
+
+The installer also makes the `sumtables` folder writable, which a normal user
+account does not get under `C:\Program Files` — and which `lyapunov` needs.
+
+### Other
+
 - The `sumtables` directory ships with the macOS disk image and the Windows
   archive.
+- Inside the macOS bundle, `lyapunov_mpf` still referenced Homebrew's copies
+  of MPFR and GMP, so it could not start on a Mac that has no Homebrew,
+  producing the same weak-focus error. Those libraries are now inside the
+  bundle.
+- Intel Macs are no longer built automatically. Building them meant
+  cross-compiling through Rosetta 2, which took about an hour and failed too
+  often; build from source with `./install_mac.sh` instead.
 - The macOS application bundle reports the real version number instead of a
   fixed one.
 - The Windows install script now stops with a clear message if it cannot
@@ -104,8 +134,11 @@ shorter than it is wide, leaving more room for the portrait itself.
 
 | Platform | File |
 |---|---|
+| Windows (installer) | `P4-windows-x86_64-setup.exe` |
+| Windows (plain archive) | `P4-windows-x86_64.zip` |
 | macOS (Apple Silicon) | `P4-macOS-arm64.dmg` |
-| macOS (Intel) | `P4-macOS-x86_64.dmg` |
-| Windows (64-bit) | `P4-windows-x86_64.zip` |
+
+Intel Macs are no longer built automatically; build from source with
+`./install_mac.sh`.
 
 Maple is required at run time and is not included.

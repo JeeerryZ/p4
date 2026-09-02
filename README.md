@@ -24,7 +24,6 @@ licensed separately and P4 asks for the path to it on first launch.
 | Windows | `P4-windows-x86_64-setup.exe` | Run it. Adds a Start menu entry and an uninstaller. |
 | Windows (no installer) | `P4-windows-x86_64.zip` | Unpack anywhere and run `p4.exe`. Keep all files together. |
 | macOS (Apple Silicon) | `P4-macOS-arm64.dmg` | Open and drag P4 to Applications. |
-| macOS (Intel) | `P4-macOS-x86_64.dmg` | Open and drag P4 to Applications. |
 
 The `sumtables` folder shipped next to `p4.exe` must stay there and must stay
 writable: `lyapunov` caches its summation tables in it, and if it cannot,
@@ -32,6 +31,10 @@ studying a weak focus fails with *"Error (readlyapunovresult) invalid subscript
 selector"*. The installer grants write access to that folder automatically; if
 you unpack the zip under `C:\Program Files` by hand, you have to do it yourself
 — or unpack it somewhere you can write to.
+
+Intel Macs are no longer built by CI — building them meant cross-compiling
+through Rosetta 2, which took about an hour and failed too often to be worth
+gating a release on. Build from source with `./install_mac.sh` instead.
 
 The sections below are for building from source.
 

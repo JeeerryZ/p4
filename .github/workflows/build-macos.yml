@@ -14,6 +14,10 @@ permissions:
 
 jobs:
   build:
+    # Apple Silicon only.  The Intel leg cross-built through Rosetta 2 and
+    # needed its own Rosetta-native Homebrew at /usr/local, which had to
+    # build most of its dependencies from source: it ran for the best part
+    # of an hour and failed often enough to be useless as a release gate.
     strategy:
       fail-fast: false
       matrix:
@@ -22,10 +26,6 @@ jobs:
             arch: arm64
             brew_prefix: /opt/homebrew
             arch_prefix: ""
-          - runner: macos-14    # Intel (x86_64), cross-built via Rosetta 2
-            arch: x86_64
-            brew_prefix: /usr/local
-            arch_prefix: "arch -x86_64"
 
     runs-on: ${{ matrix.runner }}
 
@@ -37,15 +37,6 @@ jobs:
           fetch-depth: 0
 
       # ── Dependencies ──────────────────────────────────────────────────────
-      # The runner only ships a native arm64 Homebrew at /opt/homebrew. The
-      # x86_64 leg needs its own Rosetta-native Homebrew at /usr/local —
-      # `arch -x86_64 brew` alone still resolves to the arm64 install via
-      # PATH and Homebrew correctly refuses to operate cross-arch on it.
-      - name: Install Rosetta Homebrew
-        if: matrix.arch == 'x86_64'
-        run: |
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
       - name: Install dependencies
         run: ${{ matrix.arch_prefix }} ${{ matrix.brew_prefix }}/bin/brew install qt gmp mpfr
 

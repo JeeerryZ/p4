@@ -20,8 +20,18 @@ region or a limit-cycle section
 * Windows install script reported success when it could not replace a running
 p4.exe, silently keeping the previous build
 
-### CI
+### Packaging
 
+* The Windows archive was missing every runtime library that is not part of
+Qt itself, so p4.exe stopped with "libstdc++-6.dll was not found" and could
+never start. The whole set is now bundled, and the build fails if any
+library is missing instead of publishing a package that cannot run
+* New Windows installer, `P4-windows-x86_64-setup.exe`: Start menu entry,
+uninstaller, and write access to the sumtables folder
 * Ship the sumtables directory in the macOS disk image and the Windows archive (was causing some erros while computing vector fields)
+* lyapunov\_mpf inside the macOS bundle still pointed at Homebrew and could
+not start on a Mac without it, giving the same weak-focus error
 * Read the macOS bundle version from version.h instead of a hardcoded value
+* Intel macOS builds are no longer produced automatically — build from
+source with install\_mac.sh
 
