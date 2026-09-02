@@ -117,13 +117,24 @@ jobs:
           done
           iconutil -c icns "$ICONSET" -o P4.app/Contents/Resources/P4.icns
 
-          ${{ matrix.arch_prefix }} macdeployqt P4.app
-
-          # Helper binaries must sit alongside p4 so applicationDirPath() finds them
+          # Helper binaries must sit alongside p4 so applicationDirPath()
+          # finds them -- and they must be in place *before* macdeployqt runs.
+          # lyapunov_mpf links Homebrew's libmpfr/libgmp; copied in afterwards,
+          # its load commands still pointed at /opt/homebrew (or /usr/local),
+          # so on a Mac without Homebrew it could not start at all and Maple
+          # reported "Error (readlyapunovresult) invalid subscript selector" --
+          # the same symptom as the missing sumtables directory.  -executable=
+          # makes macdeployqt copy those dylibs into the bundle and rewrite the
+          # references.
           cp build/lyapunov/lyapunov \
              build/lyapunov_mpf/lyapunov_mpf \
              build/separatrice/separatrice \
              P4.app/Contents/MacOS/
+
+          ${{ matrix.arch_prefix }} macdeployqt P4.app \
+            -executable=P4.app/Contents/MacOS/lyapunov \
+            -executable=P4.app/Contents/MacOS/lyapunov_mpf \
+            -executable=P4.app/Contents/MacOS/separatrice
 
           # lyapunov caches its summation tables next to the executables and
           # generates them on first use.  Without this directory it aborts
@@ -132,6 +143,29 @@ jobs:
           # weak focus.  Inside a bundle the executable's parent is MacOS, not
           # bin, so getDefaultP4Path() resolves the base path to Contents/MacOS.
           mkdir -p P4.app/Contents/MacOS/sumtables
+
+      # ── Verification ─────────────────────────────────────────────────
+      - name: Verify the bundle is self-contained
+        run: |
+          # Nothing inside the bundle may reference Homebrew: those paths do
+          # not exist on a user machine.  Only system libraries and
+          # @rpath/@executable_path/@loader_path references are acceptable.
+          bad=0
+          for bin in P4.app/Contents/MacOS/*; do
+            [ -f "$bin" ] || continue
+            refs=$(otool -L "$bin" | tail -n +2 | awk '{print $1}' |
+                   grep -E '^(/opt/homebrew|/usr/local)' || true)
+            if [ -n "$refs" ]; then
+              echo "$bin still references Homebrew:"
+              echo "$refs" | sed 's|^|    |'
+              bad=1
+            fi
+          done
+          if [ "$bad" != 0 ]; then
+            echo "::error::the macOS bundle is not self-contained"
+            exit 1
+          fi
+          echo "No Homebrew references remain in the bundle."
 
       # ── Create DMG ────────────────────────────────────────────────────────
       - name: Create DMG

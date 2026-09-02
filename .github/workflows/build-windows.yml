@@ -54,24 +54,113 @@ jobs:
           # weak focus.  install_win.ps1 creates it; this job assembles dist/
           # by hand, so it has to do the same.
           mkdir -p dist/sumtables
+          # Compress-Archive silently drops empty directories, so sumtables/
+          # never reached the zip.  A file inside keeps it.
+          cat > dist/sumtables/README.txt << 'EOF'
+          This directory is used by lyapunov(.exe) to cache its summation
+          tables.  It is generated on first use.  Do not delete this folder:
+          without it, studying a weak focus fails with
+          "Error (readlyapunovresult) invalid subscript selector".
+          EOF
 
       - name: Bundle Qt runtime dependencies
-        run: windeployqt dist/p4.exe --no-translations
+        run: windeployqt dist/p4.exe --no-translations --compiler-runtime
+
+      - name: Bundle MSYS2 runtime dependencies
+        run: |
+          # windeployqt deploys Qt's own DLLs and its plugins, but not the
+          # MSYS2 libraries those link against -- libstdc++, libgcc, pcre2,
+          # harfbuzz, freetype, icu, zstd, mpfr, ...  The Qt online-installer
+          # kit statically contains most of them, MSYS2's Qt does not, so the
+          # zip started as a package that could not launch at all:
+          # "libstdc++-6.dll was not found" before p4 draws a window.
+          # Walk the dependency closure with ldd and pull in everything that
+          # resolves inside the MSYS2 prefix.  ldd resolves a DLL sitting next
+          # to the binary first, so a library already copied into dist/ no
+          # longer reports a /mingw64 path and the loop terminates.
+          changed=1
+          while [ "$changed" = 1 ]; do
+            changed=0
+            for f in $(find dist -type f \( -iname '*.exe' -o -iname '*.dll' \)); do
+              for dep in $(ldd "$f" 2>/dev/null | awk '{print $3}' |
+                           grep -i '^/mingw64/bin/.*\.dll$' || true); do
+                if [ ! -f "dist/$(basename "$dep")" ]; then
+                  cp "$dep" dist/
+                  echo "  + $(basename "$dep")"
+                  changed=1
+                fi
+              done
+            done
+          done
+
+      - name: Verify the package is self-contained
+        run: |
+          # Every import of every binary in dist/ must resolve either to a
+          # Windows system DLL or to a file shipped inside dist/.  Plugins in
+          # subdirectories are loaded by p4.exe, so their dependencies are
+          # searched in the application directory -- dist/ itself.
+          missing=0
+          for f in $(find dist -type f \( -iname '*.exe' -o -iname '*.dll' \)); do
+            for dep in $(objdump -p "$f" | sed -n 's/^\s*DLL Name: //p'); do
+              low=$(echo "$dep" | tr 'A-Z' 'a-z')
+              case "$low" in
+                api-ms-*|ext-ms-*) continue ;;
+              esac
+              if [ -f "/c/Windows/System32/$dep" ]; then
+                continue
+              fi
+              if [ -n "$(find dist -maxdepth 1 -iname "$dep")" ]; then
+                continue
+              fi
+              echo "MISSING: $dep  (needed by $f)"
+              missing=1
+            done
+          done
+          if [ "$missing" != 0 ]; then
+            echo "::error::the Windows package is not self-contained"
+            exit 1
+          fi
+          echo "All imports resolve inside dist/ or in System32."
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          # The zip is kept for people who want to unpack it themselves, but a
+          # plain zip is not what P4 users expect: the original distribution
+          # had an installer, and without one there is no Start menu entry, no
+          # uninstaller, and no obvious place to put the files.
+          $iscc = "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          if (-not (Test-Path $iscc)) {
+            throw "Inno Setup not found at $iscc"
+          }
+          $m = Select-String -Path src-gui/version.h -Pattern '^#define VERSION "(.*)"'
+          $version = $m.Matches[0].Groups[1].Value
+          Write-Host "Building installer for P4 $version"
+          & $iscc "/DAppVersion=$version" packaging/p4.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
+          Get-Item P4-windows-x86_64-setup.exe | Select-Object Name, Length
 
       - name: Zip distribution
         shell: pwsh
         run: Compress-Archive -Path dist/* -DestinationPath P4-windows-x86_64.zip
 
-      - name: Upload zip as artifact
+      - name: Upload installer and zip as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: P4-windows-x86_64
-          path: P4-windows-x86_64.zip
+          path: |
+            P4-windows-x86_64-setup.exe
+            P4-windows-x86_64.zip
           retention-days: 30
 
-      - name: Attach zip to GitHub Release
+      - name: Attach installer and zip to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: P4-windows-x86_64.zip
+          files: |
+            P4-windows-x86_64-setup.exe
+            P4-windows-x86_64.zip
           body_path: CHANGES.md

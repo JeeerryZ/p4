@@ -12,6 +12,31 @@ P4 is a Qt 6 desktop application. When you evaluate a vector field, it invokes *
 
 ---
 
+## Installing a release
+
+Prebuilt packages are attached to every [release](https://github.com/JeeerryZ/p4/releases).
+They are self-contained: Qt and the other runtime libraries are bundled, so
+nothing needs to be installed beforehand. Maple is the one exception — it is
+licensed separately and P4 asks for the path to it on first launch.
+
+| Platform | File | How to install |
+|---|---|---|
+| Windows | `P4-windows-x86_64-setup.exe` | Run it. Adds a Start menu entry and an uninstaller. |
+| Windows (no installer) | `P4-windows-x86_64.zip` | Unpack anywhere and run `p4.exe`. Keep all files together. |
+| macOS (Apple Silicon) | `P4-macOS-arm64.dmg` | Open and drag P4 to Applications. |
+| macOS (Intel) | `P4-macOS-x86_64.dmg` | Open and drag P4 to Applications. |
+
+The `sumtables` folder shipped next to `p4.exe` must stay there and must stay
+writable: `lyapunov` caches its summation tables in it, and if it cannot,
+studying a weak focus fails with *"Error (readlyapunovresult) invalid subscript
+selector"*. The installer grants write access to that folder automatically; if
+you unpack the zip under `C:\Program Files` by hand, you have to do it yourself
+— or unpack it somewhere you can write to.
+
+The sections below are for building from source.
+
+---
+
 ## Dependencies
 
 | Dependency | macOS | Windows | Linux |
